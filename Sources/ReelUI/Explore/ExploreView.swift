@@ -8,7 +8,14 @@ import ReelPlayer
 @MainActor
 public struct ExploreView: View {
     @State private var searchText: String = ""
-    private let featured = WrongMatchRightCrushData.drama
+    @State private var selectedDrama: Drama = WrongMatchRightCrushData.drama
+    private let allDramas: [Drama] = [
+        WrongMatchRightCrushData.drama,
+        ExpandedCuratedDramasData.finalBossDrama,
+        ExpandedCuratedDramasData.ceoContractWifeDrama,
+        ExpandedCuratedDramasData.cursedAlphaDrama,
+        ExpandedCuratedDramasData.fashionQueenDrama
+    ]
     private let allEpisodes = WrongMatchRightCrushData.episodes
 
     public init() {}
@@ -33,6 +40,7 @@ public struct ExploreView: View {
                         searchResultsSection
                     } else {
                         featuredHeroCard
+                        allDramasShelf
                         genresSection
                         castSection
                     }
@@ -172,6 +180,73 @@ public struct ExploreView: View {
             .padding()
         }
         .padding(.horizontal)
+    }
+
+    // MARK: - All Dramas Shelf
+    private var allDramasShelf: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Top Series (\(allDramas.count))")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(ReelTheme.textPrimary)
+                .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(allDramas) { drama in
+                        Button(action: { switchToDrama(drama) }) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ZStack(alignment: .bottomLeading) {
+                                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
+                                        .fill(Color.white.opacity(0.08))
+                                        .frame(width: 125, height: 175)
+
+                                    LinearGradient(
+                                        colors: [Color.clear, Color.black.opacity(0.8)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+
+                                    Text("\(drama.totalEpisodes) Eps")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(ReelTheme.sakuraPink)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Capsule())
+                                        .padding(8)
+                                }
+
+                                Text(drama.title)
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(ReelTheme.textPrimary)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(width: 125, alignment: .leading)
+
+                                Text(drama.genresDisplay)
+                                    .font(.system(size: 9))
+                                    .foregroundColor(ReelTheme.textTertiary)
+                                    .lineLimit(1)
+                                    .frame(width: 125, alignment: .leading)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func switchToDrama(_ drama: Drama) {
+        selectedDrama = drama
+        Task {
+            if let episodes = try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: drama.id), !episodes.isEmpty {
+                PlayerPoolCoordinator.shared.loadEpisodes(episodes, startingAt: 0)
+            }
+        }
     }
 
     // MARK: - Genres Section

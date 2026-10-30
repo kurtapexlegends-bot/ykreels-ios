@@ -67,4 +67,30 @@ final class CuratedCatalogTests: XCTestCase {
         XCTAssertNotNil(ReelTheme.sakuraGlow)
         XCTAssertEqual(ReelTheme.verticalReelAspectRatio, 9.0 / 16.0)
     }
+
+    func testAllExpandedDramasCountAndIntegrity() async throws {
+        let catalog = CuratedDramaCatalog.shared
+        let allDramas = try await catalog.getAllDramas()
+
+        XCTAssertEqual(allDramas.count, 5, "Must contain all 5 curated drama series")
+
+        let expectedCounts = [
+            "drama-wrong-match-right-crush": 25,
+            "drama-final-boss": 30,
+            "drama-ceo-contract-wife": 28,
+            "drama-cursed-alpha": 26,
+            "drama-fashion-queen": 24
+        ]
+
+        var grandTotalEpisodes = 0
+        for drama in allDramas {
+            let episodes = try await catalog.getEpisodes(dramaId: drama.id)
+            let expected = expectedCounts[drama.id]
+            XCTAssertEqual(episodes.count, expected, "Mismatch for \(drama.title)")
+            XCTAssertTrue(episodes.allSatisfy { $0.isUnlocked }, "All episodes in \(drama.title) must be 100% unlocked")
+            grandTotalEpisodes += episodes.count
+        }
+
+        XCTAssertEqual(grandTotalEpisodes, 133, "Grand total across all 5 series must be 133 episodes")
+    }
 }

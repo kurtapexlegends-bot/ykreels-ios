@@ -77,10 +77,11 @@ public struct PlayerFeedView: View {
     // MARK: - Top Glass Bar
     private var topGlassBar: some View {
         HStack(spacing: 12) {
-            Text("Wrong Match, Right Crush")
+            Text(currentDramaTitle)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(ReelTheme.textPrimary)
+                .lineLimit(1)
 
             if let current = coordinator.currentEpisode {
                 Text("\(current.episodeNumber) / \(episodes.count)")
@@ -221,6 +222,19 @@ public struct PlayerFeedView: View {
         let currentSeconds = (cur.isFinite && !cur.isNaN && cur >= 0) ? Int(cur) : 0
         let totalSeconds = (tot.isFinite && !tot.isNaN && tot >= 0) ? Int(tot) : 0
         return String(format: "%d:%02d / %d:%02d", currentSeconds / 60, currentSeconds % 60, totalSeconds / 60, totalSeconds % 60)
+    }
+
+    private var currentDramaTitle: String {
+        guard let dramaId = coordinator.currentEpisode?.dramaId else {
+            return "Wrong Match, Right Crush"
+        }
+        switch dramaId {
+        case "drama-final-boss": return "Move Aside! I'm the Final Boss"
+        case "drama-ceo-contract-wife": return "The CEO's Contract Wife"
+        case "drama-cursed-alpha": return "The Cursed Alpha's Mate"
+        case "drama-fashion-queen": return "The Fashion Queen Strikes Back"
+        default: return "Wrong Match, Right Crush"
+        }
     }
 
     // MARK: - Gestures & Interactions

@@ -20,10 +20,18 @@ public final class CuratedDramaCatalog: DramaCatalogService, @unchecked Sendable
 
     public init() {
         self.dramas = [
-            WrongMatchRightCrushData.drama
+            WrongMatchRightCrushData.drama,
+            ExpandedCuratedDramasData.finalBossDrama,
+            ExpandedCuratedDramasData.ceoContractWifeDrama,
+            ExpandedCuratedDramasData.cursedAlphaDrama,
+            ExpandedCuratedDramasData.fashionQueenDrama
         ]
         self.episodesMap = [
-            WrongMatchRightCrushData.dramaId: WrongMatchRightCrushData.episodes
+            WrongMatchRightCrushData.dramaId: WrongMatchRightCrushData.episodes,
+            ExpandedCuratedDramasData.finalBossDrama.id: ExpandedCuratedDramasData.finalBossEpisodes,
+            ExpandedCuratedDramasData.ceoContractWifeDrama.id: ExpandedCuratedDramasData.ceoContractWifeEpisodes,
+            ExpandedCuratedDramasData.cursedAlphaDrama.id: ExpandedCuratedDramasData.cursedAlphaEpisodes,
+            ExpandedCuratedDramasData.fashionQueenDrama.id: ExpandedCuratedDramasData.fashionQueenEpisodes
         ]
     }
 
