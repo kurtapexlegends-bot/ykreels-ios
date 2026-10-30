@@ -12,14 +12,17 @@ public final class PlayerPoolCoordinator: ObservableObject {
     @Published public private(set) var currentEpisode: Episode?
     @Published public private(set) var currentEpisodes: [Episode] = []
     @Published public private(set) var currentDramaTitle: String = "Wrong Match, Right Crush"
+    @Published public private(set) var currentDramaCoverURL: URL?
     @Published public private(set) var isPlaying: Bool = false
+    @Published public private(set) var isBuffering: Bool = true
+    @Published public private(set) var hasRenderedFirstFrame: Bool = false
     @Published public private(set) var currentPlayhead: Double = 0.0
     @Published public private(set) var totalDuration: Double = 0.0
     @Published public private(set) var playbackRate: Float = 1.0
     public var onProgressUpdate: ((Episode, Double, Double) -> Void)?
 
     private var currentPlayer: AVPlayer?, nextPlayer: AVPlayer?, previousPlayer: AVPlayer?
-    private var timeObserverToken: Any?, itemEndObserver: Any?
+    private var timeObserverToken: Any?, itemEndObserver: Any?, statusObservation: NSKeyValueObservation?
     private var episodes: [Episode] = [], currentIndex: Int = 0, lastProgressReport: Date = .distantPast
 
     public init() {
@@ -30,13 +33,13 @@ public final class PlayerPoolCoordinator: ObservableObject {
         #endif
     }
 
-    public func loadEpisodes(_ episodeList: [Episode], dramaTitle: String? = nil, startingAt index: Int = 0, initialSeek: Double = 0.0) {
+    public func loadEpisodes(_ episodeList: [Episode], dramaTitle: String? = nil, coverURL: URL? = nil, startingAt index: Int = 0, initialSeek: Double = 0.0) {
         guard !episodeList.isEmpty else { return }
-        self.episodes = episodeList
-        self.currentEpisodes = episodeList
+        self.episodes = episodeList; self.currentEpisodes = episodeList
         self.currentIndex = max(0, min(index, episodeList.count - 1))
-        rebuildPlayerPool()
         if let title = dramaTitle, !title.isEmpty { self.currentDramaTitle = title }
+        if let cover = coverURL { self.currentDramaCoverURL = cover }
+        rebuildPlayerPool()
         if initialSeek > 0 { seek(to: initialSeek) }
     }
 
@@ -44,8 +47,8 @@ public final class PlayerPoolCoordinator: ObservableObject {
         cleanupAllPlayers()
         guard currentIndex < episodes.count else { return }
         self.currentEpisode = episodes[currentIndex]
-        self.currentPlayhead = 0.0
-        self.totalDuration = currentEpisode?.durationSeconds ?? 0.0
+        self.currentPlayhead = 0.0; self.totalDuration = currentEpisode?.durationSeconds ?? 0.0
+        self.isBuffering = true; self.hasRenderedFirstFrame = false
         if let currentURL = currentEpisode?.primaryStreamURL {
             let player = makeConfiguredPlayer(url: currentURL)
             self.currentPlayer = player
@@ -74,8 +77,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
         guard currentIndex + 1 < episodes.count else { isPlaying = false; return }
         reportProgress(); releasePlayer(&previousPlayer); detachObservers()
         currentPlayer?.pause()
-        previousPlayer = currentPlayer
-        currentIndex += 1
+        previousPlayer = currentPlayer; currentIndex += 1
         currentPlayer = nextPlayer; nextPlayer = nil
         currentEpisode = episodes[currentIndex]
         activateCurrentPlayer()
@@ -88,8 +90,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
         guard currentIndex > 0 else { return }
         reportProgress(); releasePlayer(&nextPlayer); detachObservers()
         currentPlayer?.pause()
-        nextPlayer = currentPlayer
-        currentIndex -= 1
+        nextPlayer = currentPlayer; currentIndex -= 1
         currentPlayer = previousPlayer; previousPlayer = nil
         currentEpisode = episodes[currentIndex]
         activateCurrentPlayer()
@@ -99,12 +100,11 @@ public final class PlayerPoolCoordinator: ObservableObject {
     }
 
     private func activateCurrentPlayer() {
-        currentPlayhead = 0.0
-        totalDuration = currentEpisode?.durationSeconds ?? 0.0
+        currentPlayhead = 0.0; totalDuration = currentEpisode?.durationSeconds ?? 0.0
+        isBuffering = true; hasRenderedFirstFrame = false
         let player = currentPlayer ?? currentEpisode?.primaryStreamURL.map { makeConfiguredPlayer(url: $0) }
         guard let active = player else { return }
-        currentPlayer = active
-        attachObservers(to: active)
+        currentPlayer = active; attachObservers(to: active)
         active.play()
         if playbackRate != 1.0 { active.rate = playbackRate }
         isPlaying = true
@@ -142,10 +142,19 @@ public final class PlayerPoolCoordinator: ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
             self.currentPlayhead = time.seconds
+            if time.seconds > 0.05 || player.timeControlStatus == .playing {
+                self.isBuffering = false
+                self.hasRenderedFirstFrame = true
+            }
             if let dur = player.currentItem?.duration.seconds, dur.isFinite, !dur.isNaN, dur > 0 { self.totalDuration = dur }
             if Date().timeIntervalSince(self.lastProgressReport) >= 3.0 { self.reportProgress() }
         }
         if let item = player.currentItem {
+            statusObservation = item.observe(\.status, options: [.new]) { [weak self] it, _ in
+                Task { @MainActor [weak self] in
+                    if it.status == .readyToPlay { self?.isBuffering = false; self?.hasRenderedFirstFrame = true }
+                }
+            }
             itemEndObserver = NotificationCenter.default.addObserver(
                 forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main
             ) { [weak self] _ in Task { @MainActor [weak self] in self?.advanceToNextEpisode() } }
@@ -155,17 +164,17 @@ public final class PlayerPoolCoordinator: ObservableObject {
     private func detachObservers() {
         if let token = timeObserverToken { currentPlayer?.removeTimeObserver(token); timeObserverToken = nil }
         if let endObs = itemEndObserver { NotificationCenter.default.removeObserver(endObs); itemEndObserver = nil }
+        statusObservation?.invalidate(); statusObservation = nil
     }
 
     private func releasePlayer(_ player: inout AVPlayer?) {
-        player?.pause()
-        player?.replaceCurrentItem(with: nil)
-        player = nil
+        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil
     }
 
     public func cleanupAllPlayers() {
         detachObservers()
         releasePlayer(&currentPlayer); releasePlayer(&nextPlayer); releasePlayer(&previousPlayer)
+        hasRenderedFirstFrame = false; isBuffering = true
     }
 
     public var activePlayer: AVPlayer? { currentPlayer }

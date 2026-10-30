@@ -19,7 +19,7 @@ public struct ExploreView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     searchBar
                     if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -36,6 +36,7 @@ public struct ExploreView: View {
                                     PlayerPoolCoordinator.shared.loadEpisodes(
                                         eps,
                                         dramaTitle: drama?.title ?? selectedDrama.title,
+                                        coverURL: drama?.coverURL ?? selectedDrama.coverURL,
                                         startingAt: targetIdx
                                     )
                                     AppNavigationCoordinator.shared.switchToFeed()
@@ -49,7 +50,9 @@ public struct ExploreView: View {
                         castSection
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
+                .padding(.bottom, 80)
             }
             .background(ReelTheme.pureBlack)
             .navigationTitle("Explore")
@@ -98,11 +101,15 @@ public struct ExploreView: View {
                 if let bannerURL = featured.bannerURL ?? featured.coverURL {
                     AsyncImage(url: bannerURL) { phase in
                         if let img = phase.image {
-                            img.resizable().aspectRatio(contentMode: .fill).frame(height: 280).clipped()
+                            img.resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(maxWidth: .infinity, maxHeight: 280)
+                                .clipped()
                         } else {
                             heroFallbackBackground
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .frame(height: 280)
                     .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
                 } else {
@@ -182,6 +189,7 @@ public struct ExploreView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             ))
+            .frame(maxWidth: .infinity)
             .frame(height: 280)
     }
 
@@ -297,7 +305,7 @@ public struct ExploreView: View {
         Task {
             if let episodes = try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: drama.id), !episodes.isEmpty {
                 self.allEpisodes = episodes
-                PlayerPoolCoordinator.shared.loadEpisodes(episodes, dramaTitle: drama.title, startingAt: 0)
+                PlayerPoolCoordinator.shared.loadEpisodes(episodes, dramaTitle: drama.title, coverURL: drama.coverURL, startingAt: 0)
                 AppNavigationCoordinator.shared.switchToFeed()
             }
         }

@@ -13,56 +13,56 @@ import sys
 import urllib.request
 import urllib.error
 
-# 24 Verified vertical 9:16 short-drama stream endpoints (ReelShort, MoboReels, FlickReels)
+# 24 Verified vertical 9:16 English AI micro-drama stream endpoints (ReelShort, MoboReels, DramaBox)
 VERIFIED_STREAMS = [
-    # 0: Contract Marriage With the Arms Tycoon (ReelShort / DramaBox vertical reel)
+    # 0: Pucked By My Hockey Rival (College campus hockey romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T141631Z/069_7638397758377889045_720x1280_Pucked%20By%20My%20Hockey%20Rival%20-%20Part%205%20-%20Terjerat%20Rival%20Hokiku%20%23dramawave%20%23dramabox.mp4",
+    # 1: Contract Marriage With the Arms Tycoon (Billionaire Romance)
     "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/011_7626295115027401997_720x1280_Contract%20Marriage%20With%20the%20Arms%20Tycoon-%20Link%20in%20bio%20-%20Search%20%26%20Watch%20All%20Series.mp4",
-    # 1: Contract Marriage stranger revelation
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/012_7649670011711261966_720x1280_%E3%80%8A%E5%8D%8A%E7%86%9F%E6%81%8B%E4%BA%BA%E3%80%8Bpart%2061%20I%20thought%20I%20married%20a%20stranger%20for%20a%20contract%2C%20but%20the.mp4",
-    # 2: Bella encounters Edward Hoffman (Billionaire CEO drama)
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/013_7649022892008590623_720x1280_Ep%203_Part%203_%20Bella%20encounters%20Edward%20Hoffman%2C%20a%20CEO%20she%20finds%20familiar%20but%20doubt.mp4",
-    # 3: Fiancé's family doubts & confrontation
+    # 2: Arrival at the fiancé's family (Romantic family drama)
     "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/006_7647902598808227103_720x1280_Ep%202_Episode%202_%20The%20girl%20arrives%20at%20the%20fianc%C3%A9%27s%20family%20and%20is%20met%20with%20doubts.mp4",
-    # 4: Official ReelShort vertical drama episode
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/001_7649606083882896653_720x1280_Ep%203_%F0%9F%8C%9F%20Continue%20the%20story%20here%20%F0%9F%91%89%F0%9F%8F%BB%20%F0%9F%93%B2%20Download%20the%20%E2%80%9CReelShort%E2%80%9D%20app.mp4",
-    # 5: My Husband's Secret vertical micro-drama
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/010_7648924968813743381_720x1280_%F0%9F%93%BA%20%F0%9D%99%88%F0%9D%99%AE%20%F0%9D%99%83%F0%9D%99%AA%F0%9D%99%A8%F0%9D%99%97%F0%9D%99%96%F0%9D%99%A3%F0%9D%99%99%27%F0%9D%99%A8%20%F0%9D%99%8E%F0%9D%99%9A%F0%9D%99%98%F0%9D%99%A7%F0%9D%99%9A%F0%9D%99%A9%20%F0%9D%98%BE.mp4",
-    # 6: Taming My Bullies 2 vertical series
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/002_7643225818440781070_720x1280_%F0%9F%8E%AC%F0%9D%99%8F%F0%9D%99%96%F0%9D%99%A2%F0%9D%99%9E%F0%9D%99%A3%F0%9D%99%9C%20%F0%9D%99%88%F0%9D%99%AE%20%F0%9D%98%BD%F0%9D%99%AA%F0%9D%99%A1%F0%9D%99%A1%F0%9D%99%9E%F0%9D%99%9A%F0%9D%99%A8%202%20is%20now%20stre.mp4",
-    # 7: MoboReels App popular drama continuation
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/008_7644507197778496798_720x1280_%F0%9F%8C%9FContinuethestoryhere%20%F0%9F%91%89%F0%9F%8F%BB%F0%9F%93%B2Downloadthe_MoboReels_app%2C%20%F0%9F%94%8Dsearchfor_84.mp4",
-    # 8: FlickReels yandere contract micro-drama
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/010_7565673804605705490_720x1280_%E3%83%A4%E3%83%B3%E3%83%87%E3%83%AC%E3%81%AE%E5%BC%B7%E5%88%B6%E6%84%9B-4%20%E2%9C%A8FlickReels%E3%82%A2%E3%83%97%E3%83%AA%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B.mp4",
-    # 9: Trending short-drama spotlight reel
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/011_7458979992546970888_576x1024_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E4%B8%8A%E7%83%AD%E9%97%A8%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E7%83%AD%E6%92%AD%E7%9F%AD%E5%89%A7%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E5%AE%98%20%23.mp4",
-    # 10: Awakening 1080x1920 full HD micro-drama
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/006_7557321819112475934_1080x1920_%E4%BD%A0%E7%B5%82%E6%96%BC%E9%86%92%E4%BA%86%20%23fyp%20%23%E5%9B%A0%E7%82%BA%E4%B8%80%E5%80%8B%E7%89%87%E6%AE%B5%E7%9C%8B%E4%BA%86%E6%95%B4%E9%83%A8%E5%8A%87%20%23%E7%9F%AD%E5%8A%87%20%23%E5%AE%8C%E6%95%B4%E7%89%88%E5%85%8D%E8%B2%BB.mp4",
-    # 11: Return in Glory 1080x1920 finale episode
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/012_7475262685614017800_1080x1920_%E3%80%8A%E8%A1%A3%E9%8C%A6%E9%82%84%E9%84%89%E5%BE%8C%E3%80%8B%E7%AC%AC%E4%B8%89%E5%8D%81%E5%85%AD%E9%9B%86END%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%20%23%E7%9F%AD%E5%89%A7%E5%88%86%E4%BA%AB%20%23%E7%9F%AD%E5%89%A7%E6%9D%A5%E4%BA%86.mp4",
-    # 12: Modern Tycoon vertical story
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/007_7634317672930561301_576x1024_7634317672930561301.mp4",
-    # 13: High-society intrigue continuation
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/004_7628067810920484116_576x1024_7628067810920484116.mp4",
-    # 14: Grand Climax short-drama episode
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/001_7649607267184102664_576x1024_%2849%29%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E5%B9%BF_%23%E5%A4%A7%E7%BB%93%E5%B1%80%E5%A4%AA%E7%B2%BE%E5%BD%A9%E4%BA%86.mp4",
-    # 15: Secret Billionaire recommendation reel
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/003_7634421520667839752_576x1024_%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E6%96%87%20%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E8%96%A6%20%23fyp%20%23%E5%B0%8F%E8%AA%AA.mp4",
-    # 16: Cold Tycoon Falls in Love reel
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/013_7491336377259347205_576x1024_%E5%9B%9E%E8%A6%86%20%40%E6%82%A8%E7%9A%84%E6%9A%B1%E7%A8%B1%E5%8F%AA%E8%83%BD%E6%AF%8F%E9%9A%947%E5%A4%A9%E8%AE%8A%E6%9B%B4%E4%B8%80%E6%AC%A1%E3%80%82%20%23%E7%A6%81%E6%85%BE%E5%A4%A7%E4%BD%AC%E6%B7%AA%E9%99%B7%E4%BA%86%20%23%E7%9F%AD.mp4",
-    # 17: Viral drama series episode
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/014_7473544136436485422_576x1024_%23%E7%9F%AD%E5%89%A7%E6%9D%A5%E4%BA%86%20%23%E7%9F%AD%E5%8A%87%E5%85%A8%E9%9B%86%20%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%20%23%E7%9F%AD%E5%89%A7%20%23%E7%9F%AD%E8%A7%86%E9%A2%91%20%23%E7%9F%AD%E5%89%A7%E6%83%85%20%23%E7%BE%8E%E5%9B%BD.mp4",
-    # 18: Ultimate Season Finale
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/008_7633466667560914193_576x1024_%E5%A4%A7%E7%BB%93%E5%B1%80%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%20%23%E7%9F%AD%E5%89%A7.mp4",
-    # 19: Chinese micro-drama movie reel
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/009_7573333375302339856_576x1024_%E5%8D%8E%E8%AF%AD%E7%9F%AD%E5%89%A7%23%E5%8D%8E%E8%AF%AD%E7%94%B5%E5%BD%B1%20%23%E6%8A%96%E9%9F%B3%E8%BF%BD%E5%89%A7%E6%8E%A8%E8%8D%90.mp4",
-    # 20: Holding Power: Chapter 24 Finale
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/015_7520621876826230072_576x1024_%E5%9F%B7%E6%8E%8C24-%E7%B5%90%E5%B1%80-END%20%23%E5%9B%A0%E7%82%BA%E4%B8%80%E5%80%8B%E7%89%87%E6%AE%B5%E7%9C%8B%E4%BA%86%E6%95%B4%E9%83%A8%E5%8A%87%20%23%E5%9B%A0%E4%B8%BA%E4%B8%80%E4%B8%AA%E7%89%87%E6%AE%B5%E7%9C%8B%E4%BA%86.mp4",
-    # 21: Dramatic Short scene trending
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/021_7624476049702735126_576x1024_%23movie%20%23fyp%20%23trending%20%23moviescene%20%23Filmliebe%20%23Filmszene%20%23dramashort.mp4",
-    # 22: Seven Years Wrong Love Revenge
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134918Z/005_7567416033141607735_480x854_%23%E7%9F%AD%E5%8A%87%E5%85%A8%E9%9B%86%20%23%E7%BD%91%E5%89%A7%23%E7%BD%91%E7%BB%9C%E7%9F%AD%E8%A7%86%E9%A2%91%20%23%E7%9F%AD%E5%89%A7%20%23%E9%94%99%E7%88%B1%E4%B8%83%E5%B9%B4%E6%B1%9F%E5%B0%8F%E5%A7%90%E4%B8%8D%E5%86%8D%E5%9B%9E%E5%A4%B4.mp4",
-    # 23: Contract Marriage International Dub
-    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/014_7384920391740968200_576x1024_Contract%20marriage%20in%20Hindi%20dubbed%20episode%201%20part%201%F0%9F%A5%B0%F0%9F%A4%97%F0%9F%87%AE%F0%9F%87%B3%F0%9F%87%B8%F0%9F%87%A6%23editi.mp4"
+    # 3: Grandma's 2-Year Contract Wish (Emotional contract romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/016_7649585478529797407_720x1280_Ep%203_Episode%203_%20Grandma%E2%80%99s%20deathbed%20wish%20forces%20Emily%20into%20a%202-year%20contract%20wi.mp4",
+    # 4: Contract Marriage Climax (High-stakes romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/017_7648669635025374482_720x1280_Contract%20Marriage%20Part-94_....%E2%9C%A8.mp4",
+    # 5: My Alpha Boss Gave Me Triplets (Werewolf / Billionaire Alpha)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/009_7649296634114788621_720x1280_Full%20Ep%20in%20Bio%21%20Watch%20the%20minidrama%20My%20Alpha%20Boss%20Gave%20Me%20Triplets%20for%20FREE.mp4",
+    # 6: ReelShort Official Vertical Drama (Top ReelShort episode)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/011_7649196886359936269_720x1280_%23reelshort%20%23microdrama%20%23vertical%20%23acting%20%23itscamsworld.mp4",
+    # 7: No More Secretary, No More Secret Lover Pt. 5 (DramaBox CEO Romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/048_7649597103739538719_720x1280_No%20More%20Secretary%2C%20No%20More%20Secret%20Lover%2005%20%23dramabox%20%23drama%20%23shortsdrama%20%23shortf.mp4",
+    # 8: No More Secretary, No More Secret Lover Pt. 6 (DramaBox CEO Romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/050_7649599049624030495_720x1280_No%20More%20Secretary%2C%20No%20More%20Secret%20Lover%2006%20%23dramabox%20%23drama%20%23shortsdrama%20%23shortf.mp4",
+    # 9: Revealing Secrets & Emotional Moments (Intrigue and suspense)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/009_7649990615257681165_720x1280_Ep%202_Part%202%20continues%20the%20story%2C%20revealing%20more%20secrets%20and%20emotional%20moments.%20D.mp4",
+    # 10: AI USA Short Drama (Official ReelShort mini-drama)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/033_7647390841241160990_720x1280_%23AI%20%23TikTokMinis%20%23USAShortDrama%20%23ReelShort%20%23FYP.mp4",
+    # 11: His Cure, His Wife (Billionaire medical devotion)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/035_7648241565810429201_720x1280_EP-01%20HIS%20CURE%20HIS%20WIFE%20%23drama%20%23viral%20%23shortdrama%20%23skit%20%23hiscurehiswife.mp4",
+    # 12: My Fiancé My Bodyguard (Action romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/073_7649900495405976846_720x1280_Episode%20106%20-%20My%20Fianc%C3%A9%20My%20Bodyguard%20%23fyp%20%23explore%20%23trendingreels%20%23reelkarofeel.mp4",
+    # 13: High-School Rivalry 1080x1920 Full HD
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/039_7649130461813361933_1080x1920_We%20clearly%20have%20too%20much%20content%20from%20this%20shoot%20%40itscamsworld%20%23tamingmybullies.mp4",
+    # 14: Exactly My Type (ReelShort Rom-Com)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/045_7649812718165200142_720x1280_Exactly%20my%20type%21%21%20%23reelshort%20%23shortdrama%20%23vertical%20%23mustwatch%20%23fyp.mp4",
+    # 15: Taming My Bullies 1080x1920 Full HD (Campus teen drama)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/052_7646490757162863886_1080x1920_Emma%20stays%20stressed%20fr%20%40itscamsworld%20%23reelshort%20%23tamingmybullies%20%23iykyk%20%23vertica.mp4",
+    # 16: Billionaire Family Dynasty (Billionaire Grandfather Howard Eastwood)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/058_7583733367791684895_720x1280_Teaser%20from%20new%20Vertical%20Drama%20Series%20I%20play%20Billionaire%20Grandfater%20Howard%20Eastw.mp4",
+    # 17: The Tycoon Wants the Truth (Secret baby / Undercover Billionaire)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/082_7582272017362111764_720x1280_The%20Tycoon%20Wants%20the%20Truth%20%23goodshort%20%23goodshortmustseelist%20%23drama%20%23SecretBaby%20%23.mp4",
+    # 18: Boss Romance Confession (Workplace CEO romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/124_7574734744219503890_720x1280_Just%20one%20kiss%2C%20and%20her%20boss%20would%20become%20deeply%20in%20love%20with%20her.%23drama%20%23shorts.mp4",
+    # 19: MoboReels Episode Feature (High-society drama)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T120351Z/055_7649779400182910238_720x1280_Watch%20the%20full%20episode.%20Download%20the_%20MoboReels%20app%20and%20search%20for%20%5B915209%5Dto%20wa.mp4",
+    # 20: MoboReels Trending Reel (Passionate confrontation)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T120351Z/058_7649775035376291102_720x1280_Continue%20the%20story%20here%20Download%20the%20_MoboReels_%20app%2C_searchfor_898_833_%2C%20and%20wa.mp4",
+    # 21: MoboReels High Stakes (Heiress revenge)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T120351Z/062_7649774223975533837_720x1280_Download%20the%20MoboReels%20app.%20copy%20the%20code%20%5B915765%5D%20and%20search%20it.%20A%20huge%20number.mp4",
+    # 22: MoboReels Elite Society (Intrigue and secrets)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T120351Z/063_7648643642319441183_720x1280_Watch%20the%20full%20episode.%20-%20Download%20the%20MoboReels%20app%20and%20search%20for%20%5B885150%5D%20to.mp4",
+    # 23: The Mafia King's Embrace (DramaBox Mafia Romance)
+    "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T131439Z/022_7602078602489892151_720x1280_Episode%205_%20No%20Escape%20From%20The%20Mafia%20King%27s%20Embrace%23DramaBox.mp4"
 ]
 
 def make_streams(prefix: str, ep: int, drama_index: int):

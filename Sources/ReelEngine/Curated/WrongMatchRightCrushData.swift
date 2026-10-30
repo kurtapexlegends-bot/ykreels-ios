@@ -21,8 +21,10 @@ public enum WrongMatchRightCrushData {
     )
 
     private static let verticalStreamURLs: [URL] = [
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T141631Z/069_7638397758377889045_720x1280_Pucked%20By%20My%20Hockey%20Rival%20-%20Part%205%20-%20Terjerat%20Rival%20Hokiku%20%23dramawave%20%23dramabox.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/052_7646490757162863886_1080x1920_Emma%20stays%20stressed%20fr%20%40itscamsworld%20%23reelshort%20%23tamingmybullies%20%23iykyk%20%23vertica.mp4")!,
         URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/011_7626295115027401997_720x1280_Contract%20Marriage%20With%20the%20Arms%20Tycoon-%20Link%20in%20bio%20-%20Search%20%26%20Watch%20All%20Series.mp4")!,
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/012_7649670011711261966_720x1280_%E3%80%8A%E5%8D%8A%E7%86%9F%E6%81%8B%E4%BA%BA%E3%80%8Bpart%2061%20I%20thought%20I%20married%20a%20stranger%20for%20a%20contract%2C%20but%20the.mp4")!
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/033_7647390841241160990_720x1280_%23AI%20%23TikTokMinis%20%23USAShortDrama%20%23ReelShort%20%23FYP.mp4")!
     ]
 
     private static func episodeStream(number: Int) -> [StreamSource] {

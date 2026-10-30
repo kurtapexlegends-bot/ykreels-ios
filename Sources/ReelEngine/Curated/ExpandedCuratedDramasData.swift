@@ -11,24 +11,24 @@ public enum ExpandedCuratedDramasData {
     private static let verticalStreamURLs: [URL] = [
         // 0: Contract Marriage With the Arms Tycoon
         URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/011_7626295115027401997_720x1280_Contract%20Marriage%20With%20the%20Arms%20Tycoon-%20Link%20in%20bio%20-%20Search%20%26%20Watch%20All%20Series.mp4")!,
-        // 1: Contract stranger marriage
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/012_7649670011711261966_720x1280_%E3%80%8A%E5%8D%8A%E7%86%9F%E6%81%8B%E4%BA%BA%E3%80%8Bpart%2061%20I%20thought%20I%20married%20a%20stranger%20for%20a%20contract%2C%20but%20the.mp4")!,
-        // 2: Bella encounters Edward Hoffman (CEO)
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/013_7649022892008590623_720x1280_Ep%203_Part%203_%20Bella%20encounters%20Edward%20Hoffman%2C%20a%20CEO%20she%20finds%20familiar%20but%20doubt.mp4")!,
-        // 3: Fiancé's family doubts
+        // 1: Arrival at fiancé's family
         URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/006_7647902598808227103_720x1280_Ep%202_Episode%202_%20The%20girl%20arrives%20at%20the%20fianc%C3%A9%27s%20family%20and%20is%20met%20with%20doubts.mp4")!,
-        // 4: ReelShort App official episode
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/001_7649606083882896653_720x1280_Ep%203_%F0%9F%8C%9F%20Continue%20the%20story%20here%20%F0%9F%91%89%F0%9F%8F%BB%20%F0%9F%93%B2%20Download%20the%20%E2%80%9CReelShort%E2%80%9D%20app.mp4")!,
-        // 5: My Husband's Secret
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/010_7648924968813743381_720x1280_%F0%9F%93%BA%20%F0%9D%99%88%F0%9D%99%AE%20%F0%9D%99%83%F0%9D%99%AA%F0%9D%99%A8%F0%9D%99%97%F0%9D%99%96%F0%9D%99%A3%F0%9D%99%99%27%F0%9D%99%A8%20%F0%9D%99%8E%F0%9D%99%9A%F0%9D%99%98%F0%9D%99%A7%F0%9D%99%9A%F0%9D%99%A9%20%F0%9D%98%BE.mp4")!,
-        // 6: Taming My Bullies 2
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/002_7643225818440781070_720x1280_%F0%9F%8E%AC%F0%9D%99%8F%F0%9D%99%96%F0%9D%99%A2%F0%9D%99%9E%F0%9D%99%A3%F0%9D%99%9C%20%F0%9D%99%88%F0%9D%99%AE%20%F0%9D%98%BD%F0%9D%99%AA%F0%9D%99%A1%F0%9D%99%A1%F0%9D%99%9E%F0%9D%99%9A%F0%9D%99%A8%202%20is%20now%20stre.mp4")!,
-        // 7: MoboReels popular reel
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/008_7644507197778496798_720x1280_%F0%9F%8C%9FContinuethestoryhere%20%F0%9F%91%89%F0%9F%8F%BB%F0%9F%93%B2Downloadthe_MoboReels_app%2C%20%F0%9F%94%8Dsearchfor_84.mp4")!,
-        // 8: FlickReels drama
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/010_7565673804605705490_720x1280_%E3%83%A4%E3%83%B3%E3%83%87%E3%83%AC%E3%81%AE%E5%BC%B7%E5%88%B6%E6%84%9B-4%20%E2%9C%A8FlickReels%E3%82%A2%E3%83%97%E3%83%AA%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B.mp4")!,
-        // 9: Trending short-drama
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/011_7458979992546970888_576x1024_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E4%B8%8A%E7%83%AD%E9%97%A8%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E7%83%AD%E6%92%AD%E7%9F%AD%E5%89%A7%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E5%AE%98%20%23.mp4")!
+        // 2: Grandma's 2-Year Contract
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/016_7649585478529797407_720x1280_Ep%203_Episode%203_%20Grandma%E2%80%99s%20deathbed%20wish%20forces%20Emily%20into%20a%202-year%20contract%20wi.mp4")!,
+        // 3: Contract Marriage Part 94
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/017_7648669635025374482_720x1280_Contract%20Marriage%20Part-94_....%E2%9C%A8.mp4")!,
+        // 4: My Alpha Boss Gave Me Triplets
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/009_7649296634114788621_720x1280_Full%20Ep%20in%20Bio%21%20Watch%20the%20minidrama%20My%20Alpha%20Boss%20Gave%20Me%20Triplets%20for%20FREE.mp4")!,
+        // 5: ReelShort Official Vertical Drama
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/011_7649196886359936269_720x1280_%23reelshort%20%23microdrama%20%23vertical%20%23acting%20%23itscamsworld.mp4")!,
+        // 6: No More Secretary, No More Secret Lover
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T165533Z/048_7649597103739538719_720x1280_No%20More%20Secretary%2C%20No%20More%20Secret%20Lover%2005%20%23dramabox%20%23drama%20%23shortsdrama%20%23shortf.mp4")!,
+        // 7: AI USA Short Drama / ReelShort
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/033_7647390841241160990_720x1280_%23AI%20%23TikTokMinis%20%23USAShortDrama%20%23ReelShort%20%23FYP.mp4")!,
+        // 8: His Cure His Wife
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T085021Z/035_7648241565810429201_720x1280_EP-01%20HIS%20CURE%20HIS%20WIFE%20%23drama%20%23viral%20%23shortdrama%20%23skit%20%23hiscurehiswife.mp4")!,
+        // 9: Taming My Bullies 1080x1920 Full HD
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260611T095109Z/052_7646490757162863886_1080x1920_Emma%20stays%20stressed%20fr%20%40itscamsworld%20%23reelshort%20%23tamingmybullies%20%23iykyk%20%23vertica.mp4")!
     ]
 
     // MARK: - Helper Stream Generator

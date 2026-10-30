@@ -104,4 +104,12 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         coordinator.loadEpisodes(sampleEpisodes, dramaTitle: "Custom Title", startingAt: 0)
         XCTAssertEqual(coordinator.currentDramaTitle, "Custom Title")
     }
+
+    func testCoverURLAndBufferingState() {
+        let testURL = URL(string: "https://example.com/cover.jpg")
+        coordinator.loadEpisodes(sampleEpisodes, dramaTitle: "Test Cover", coverURL: testURL, startingAt: 0)
+        XCTAssertEqual(coordinator.currentDramaCoverURL, testURL)
+        XCTAssertTrue(coordinator.isBuffering)
+        XCTAssertFalse(coordinator.hasRenderedFirstFrame)
+    }
 }

@@ -24,13 +24,15 @@ public struct LibraryView: View {
 
     public var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     continueWatchingSection
                     storageCacheSection
                     remoteFeedSection
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
+                .padding(.bottom, 80)
             }
             .background(ReelTheme.pureBlack)
             .navigationTitle("Library")
@@ -95,7 +97,7 @@ public struct LibraryView: View {
             Button(action: {
                 let startIdx = activeEpisodes.firstIndex(where: { $0.episodeNumber == epNum }) ?? max(0, epNum - 1)
                 let playhead = playbackProgress?.playheadSeconds ?? 0.0
-                PlayerPoolCoordinator.shared.loadEpisodes(activeEpisodes, dramaTitle: activeDrama.title, startingAt: startIdx, initialSeek: playhead)
+                PlayerPoolCoordinator.shared.loadEpisodes(activeEpisodes, dramaTitle: activeDrama.title, coverURL: activeDrama.coverURL, startingAt: startIdx, initialSeek: playhead)
                 AppNavigationCoordinator.shared.switchToFeed()
             }) {
                 HStack(spacing: 12) {
