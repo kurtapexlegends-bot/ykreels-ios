@@ -10,8 +10,8 @@ public enum WrongMatchRightCrushData {
         id: dramaId,
         title: "Wrong Match, Right Crush",
         synopsis: "College freshman Nora intends to message her long-time crush, Theo—the charming basketball captain—but accidentally adds Beckett, the campus playboy, instead. After three months of secret late-night romance, Beckett shatters her heart by publicly choosing cheer captain Chloe. As Chloe's bullying escalates, Theo steps in to protect Nora, igniting a genuine love story. But when Beckett realizes Nora's messages were meant for Theo all along, he wages an obsessive campaign to win her back.",
-        coverURL: URL(string: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80"),
-        bannerURL: URL(string: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1200&auto=format&fit=crop&q=80"),
+        coverURL: URL(string: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&auto=format&fit=crop&q=80"),
+        bannerURL: URL(string: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1200&auto=format&fit=crop&q=80"),
         genres: ["Romance", "College Drama", "Coming-of-Age", "Friends to Lovers"],
         tags: ["Campus", "Basketball Star", "Mistaken Identity", "Love Triangle", "Drama"],
         totalEpisodes: 25,
@@ -21,11 +21,8 @@ public enum WrongMatchRightCrushData {
     )
 
     private static let verticalStreamURLs: [URL] = [
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/001_7649607267184102664_576x1024_%2849%29%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E5%B9%BF_%23%E5%A4%A7%E7%BB%93%E5%B1%80%E5%A4%AA%E7%B2%BE%E5%BD%A9%E4%BA%86.mp4")!,
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/003_7634421520667839752_576x1024_%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E6%96%87%20%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E8%96%A6%20%23fyp%20%23%E5%B0%8F%E8%AA%AA.mp4")!,
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/007_7634317672930561301_576x1024_7634317672930561301.mp4")!,
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/010_7565673804605705490_720x1280_%E3%83%A4%E3%83%B3%E3%83%87%E3%83%AC%E3%81%AE%E5%BC%B7%E5%88%B6%E6%84%9B-4%20%E2%9C%A8FlickReels%E3%82%A2%E3%83%97%E3%83%AA%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B.mp4")!,
-        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/011_7458979992546970888_576x1024_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E4%B8%8A%E7%83%AD%E9%97%A8%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E7%83%AD%E6%92%AD%E7%9F%AD%E5%89%A7%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E5%AE%98%20%23.mp4")!
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/011_7626295115027401997_720x1280_Contract%20Marriage%20With%20the%20Arms%20Tycoon-%20Link%20in%20bio%20-%20Search%20%26%20Watch%20All%20Series.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T154911Z/012_7649670011711261966_720x1280_%E3%80%8A%E5%8D%8A%E7%86%9F%E6%81%8B%E4%BA%BA%E3%80%8Bpart%2061%20I%20thought%20I%20married%20a%20stranger%20for%20a%20contract%2C%20but%20the.mp4")!
     ]
 
     private static func episodeStream(number: Int) -> [StreamSource] {

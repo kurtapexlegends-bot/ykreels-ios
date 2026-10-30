@@ -101,21 +101,13 @@ public struct LibraryView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         AsyncImage(url: activeDrama.coverURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable().aspectRatio(contentMode: .fill)
-                            case .failure:
+                            if let img = phase.image {
+                                img.resizable().aspectRatio(contentMode: .fill)
+                            } else {
                                 ZStack {
-                                    Color.white.opacity(0.06)
-                                    Image(systemName: "film").font(.caption).foregroundColor(ReelTheme.sakuraPink.opacity(0.7))
+                                    LinearGradient(colors: [Color(white: 0.18), Color(white: 0.09)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                    Image(systemName: "film.stack").font(.caption).foregroundColor(ReelTheme.sakuraPink.opacity(0.8))
                                 }
-                            case .empty:
-                                ZStack {
-                                    Color.white.opacity(0.04)
-                                    ProgressView().tint(ReelTheme.sakuraPink).scaleEffect(0.6)
-                                }
-                            @unknown default:
-                                Color.white.opacity(0.06)
                             }
                         }
                         .frame(width: 72, height: 96)

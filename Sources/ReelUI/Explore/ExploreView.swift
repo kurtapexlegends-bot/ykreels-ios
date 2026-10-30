@@ -4,8 +4,9 @@ import ReelEngine
 import ReelPlayer
 import ReelDatabase
 
-/// Minimalist Explore & Drama catalog tab.
-/// Features Apple glassmorphism, Sakura Pink badges, and high-signal typography.
+/// Immersive Explore & Drama catalog tab.
+/// Features StoryReel/ReelShort standard 160x230 poster cards, Apple glassmorphism,
+/// Sakura Pink accents, and instant-play switching.
 @MainActor
 public struct ExploreView: View {
     @State private var searchText: String = ""
@@ -19,7 +20,7 @@ public struct ExploreView: View {
     public var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 22) {
                     searchBar
                     if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         ExploreSearchResultsView(
@@ -58,13 +59,7 @@ public struct ExploreView: View {
             .task {
                 await loadCatalog()
                 await CuratedDramaCatalog.shared.syncFromRemote()
-            }
-            .refreshable {
-                await CuratedDramaCatalog.shared.syncFromRemote(force: true)
                 await loadCatalog()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .dramaCatalogDidUpdate)) { _ in
-                Task { await loadCatalog() }
             }
         }
     }
@@ -73,10 +68,9 @@ public struct ExploreView: View {
     private var searchBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 14))
                 .foregroundColor(ReelTheme.textSecondary)
 
-            TextField("Search dramas, episodes, cast", text: $searchText)
+            TextField("Search dramas, genres, cast...", text: $searchText)
                 .font(.subheadline)
                 .foregroundColor(ReelTheme.textPrimary)
 
@@ -87,7 +81,7 @@ public struct ExploreView: View {
                 }
             }
         }
-        .padding(10)
+        .padding(12)
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium))
         .overlay(
@@ -103,57 +97,78 @@ public struct ExploreView: View {
             ZStack(alignment: .bottomLeading) {
                 if let bannerURL = featured.bannerURL ?? featured.coverURL {
                     AsyncImage(url: bannerURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image.resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped()
-                        case .failure:
-                            heroFallbackBackground
-                        case .empty:
-                            ZStack { heroFallbackBackground; ProgressView().tint(ReelTheme.sakuraPink) }
-                        @unknown default:
+                        if let img = phase.image {
+                            img.resizable().aspectRatio(contentMode: .fill).frame(height: 280).clipped()
+                        } else {
                             heroFallbackBackground
                         }
                     }
-                    .frame(height: 200)
+                    .frame(height: 280)
                     .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
                 } else {
                     heroFallbackBackground
                 }
 
                 LinearGradient(
-                    colors: [Color.clear, Color.black.opacity(0.85)],
+                    colors: [Color.clear, Color.black.opacity(0.3), Color.black.opacity(0.92)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
-                        Text("FEATURED")
-                            .font(.system(size: 10, weight: .heavy))
+                        Text("FEATURED SERIES")
+                            .font(.system(size: 11, weight: .heavy))
                             .foregroundColor(ReelTheme.sakuraPink)
-                            .tracking(1.2)
+                            .tracking(1.4)
+
                         Spacer()
-                        Image(systemName: "play.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(ReelTheme.sakuraPink)
+
+                        Text("\(featured.totalEpisodes) Episodes")
+                            .font(.caption2.bold())
+                            .foregroundColor(ReelTheme.sakuraMist)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Capsule())
                     }
 
                     Text(featured.title)
-                        .font(.title3).fontWeight(.bold).foregroundColor(ReelTheme.textPrimary)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(ReelTheme.textPrimary)
+                        .lineLimit(2)
 
-                    Text(featured.genresDisplay)
-                        .font(.caption2).foregroundColor(ReelTheme.textSecondary)
+                    Text(featured.synopsis)
+                        .font(.caption)
+                        .foregroundColor(ReelTheme.textSecondary)
+                        .lineLimit(2)
 
-                    Text("\(featured.totalEpisodes) Episodes • Tap to Play")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(ReelTheme.sakuraMist)
+                    HStack(spacing: 12) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "play.fill")
+                                .font(.caption.bold())
+                            Text("Watch Now")
+                                .font(.subheadline.bold())
+                        }
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 9)
+                        .background(ReelTheme.sakuraPink)
+                        .clipShape(Capsule())
+
+                        Text(featured.genresDisplay)
+                            .font(.caption)
+                            .foregroundColor(ReelTheme.sakuraMist)
+                    }
+                    .padding(.top, 4)
                 }
-                .padding()
+                .padding(18)
             }
             .overlay(
                 RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
-                    .strokeBorder(ReelTheme.sakuraPink.opacity(0.3), lineWidth: 0.8)
+                    .strokeBorder(ReelTheme.sakuraPink.opacity(0.35), lineWidth: 0.8)
             )
             .padding(.horizontal)
         }
@@ -163,86 +178,87 @@ public struct ExploreView: View {
     private var heroFallbackBackground: some View {
         RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
             .fill(LinearGradient(
-                colors: [ReelTheme.sakuraPink.opacity(0.25), ReelTheme.cardBackground],
+                colors: [Color(white: 0.16), Color(white: 0.08)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             ))
-            .frame(height: 200)
+            .frame(height: 280)
     }
 
     // MARK: - All Dramas Shelf
     private var allDramasShelf: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Top Series (\(allDramas.count))")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(ReelTheme.textPrimary)
-                .padding(.horizontal)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Top Series (\(allDramas.count))")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(ReelTheme.textPrimary)
+
+                Spacer()
+
+                Text("Swipe to explore")
+                    .font(.caption)
+                    .foregroundColor(ReelTheme.textTertiary)
+            }
+            .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: 14) {
                     ForEach(allDramas) { drama in
                         Button(action: { switchToDrama(drama) }) {
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: 8) {
                                 ZStack(alignment: .bottomLeading) {
+                                    // Poster Layer
                                     AsyncImage(url: drama.coverURL) { phase in
-                                        switch phase {
-                                        case .success(let image):
-                                            image.resizable().aspectRatio(contentMode: .fill)
-                                        case .failure:
-                                            ZStack {
-                                                Color.white.opacity(0.06)
-                                                Image(systemName: "film")
-                                                    .font(.caption)
-                                                    .foregroundColor(ReelTheme.sakuraPink.opacity(0.7))
-                                            }
-                                        case .empty:
-                                            ZStack {
-                                                Color.white.opacity(0.04)
-                                                ProgressView().tint(ReelTheme.sakuraPink).scaleEffect(0.6)
-                                            }
-                                        @unknown default:
-                                            Color.white.opacity(0.06)
+                                        if let img = phase.image {
+                                            img.resizable().aspectRatio(contentMode: .fill)
+                                        } else {
+                                            posterFallback(for: drama)
                                         }
                                     }
-                                    .frame(width: 125, height: 175)
-                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+                                    .frame(width: 160, height: 230)
+                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium))
 
+                                    // Contrast Vignette at bottom
                                     LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(0.8)],
+                                        colors: [Color.clear, Color.black.opacity(0.85)],
                                         startPoint: .top,
                                         endPoint: .bottom
                                     )
-                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+                                    .frame(height: 80)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium))
 
+                                    // Episode Count Tag
                                     Text("\(drama.totalEpisodes) Eps")
-                                        .font(.system(size: 9, weight: .bold))
+                                        .font(.system(size: 11, weight: .bold))
                                         .foregroundColor(ReelTheme.sakuraPink)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
                                         .background(.ultraThinMaterial)
                                         .clipShape(Capsule())
-                                        .padding(8)
+                                        .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+                                        .padding(10)
                                 }
-                                .frame(width: 125, height: 175)
+                                .frame(width: 160, height: 230)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
-                                        .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
+                                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium)
+                                        .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.6)
                                 )
 
                                 Text(drama.title)
-                                    .font(.caption)
+                                    .font(.headline)
                                     .fontWeight(.bold)
                                     .foregroundColor(ReelTheme.textPrimary)
                                     .lineLimit(2)
                                     .multilineTextAlignment(.leading)
-                                    .frame(width: 125, alignment: .leading)
+                                    .frame(width: 160, alignment: .leading)
 
                                 Text(drama.genresDisplay)
-                                    .font(.system(size: 9))
-                                    .foregroundColor(ReelTheme.textTertiary)
+                                    .font(.caption)
+                                    .foregroundColor(ReelTheme.textSecondary)
                                     .lineLimit(1)
-                                    .frame(width: 125, alignment: .leading)
+                                    .frame(width: 160, alignment: .leading)
                             }
                         }
                         .buttonStyle(.plain)
@@ -251,6 +267,29 @@ public struct ExploreView: View {
                 .padding(.horizontal)
             }
         }
+    }
+
+    private func posterFallback(for drama: Drama) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(white: 0.18), Color(white: 0.09)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            VStack(spacing: 8) {
+                Image(systemName: "film.stack")
+                    .font(.system(size: 32))
+                    .foregroundColor(ReelTheme.sakuraPink.opacity(0.8))
+
+                Text(drama.title)
+                    .font(.caption2.bold())
+                    .foregroundColor(ReelTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .lineLimit(2)
+            }
+        }
+        .frame(width: 160, height: 230)
     }
 
     private func switchToDrama(_ drama: Drama) {
@@ -291,8 +330,8 @@ public struct ExploreView: View {
     private var genresSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Genres")
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.headline)
+                .fontWeight(.bold)
                 .foregroundColor(ReelTheme.textPrimary)
                 .padding(.horizontal)
 
@@ -301,10 +340,10 @@ public struct ExploreView: View {
                     ForEach(allAvailableGenres, id: \.self) { genre in
                         Button(action: { searchText = genre }) {
                             Text(genre)
-                                .font(.caption)
+                                .font(.subheadline)
                                 .foregroundColor(ReelTheme.textPrimary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
                                 .background(.ultraThinMaterial)
                                 .clipShape(Capsule())
                                 .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
@@ -321,36 +360,20 @@ public struct ExploreView: View {
     private var castSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Cast")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(ReelTheme.textPrimary)
+                .font(.headline).fontWeight(.bold).foregroundColor(ReelTheme.textPrimary)
                 .padding(.horizontal)
 
             VStack(spacing: 8) {
                 ForEach(featured.cast, id: \.self) { name in
                     Button(action: {
-                        let cleanName = name.components(separatedBy: " (").first ?? name
-                        searchText = cleanName
+                        searchText = name.components(separatedBy: " (").first ?? name
                     }) {
                         HStack(spacing: 12) {
-                            Circle()
-                                .fill(Color.white.opacity(0.08))
-                                .frame(width: 32, height: 32)
-                                .overlay(
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(ReelTheme.sakuraPink)
-                                )
-
-                            Text(name)
-                                .font(.subheadline)
-                                .foregroundColor(ReelTheme.textPrimary)
-
+                            Circle().fill(Color.white.opacity(0.08)).frame(width: 36, height: 36)
+                                .overlay(Image(systemName: "person.fill").font(.system(size: 14)).foregroundColor(ReelTheme.sakuraPink))
+                            Text(name).font(.subheadline).foregroundColor(ReelTheme.textPrimary)
                             Spacer()
-
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundColor(ReelTheme.textTertiary)
+                            Image(systemName: "chevron.right").font(.caption2).foregroundColor(ReelTheme.textTertiary)
                         }
                         .padding(.horizontal)
                     }

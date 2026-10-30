@@ -7,12 +7,13 @@ import ReelPlayer
 
 /// Ultra-minimalist vertical 9:16 short-drama reel player feed.
 /// Features Apple glassmorphism, Soft Pastel Sakura Pink accents,
-/// butter-smooth spring physics, and an auto-hiding glass HUD.
+/// right-edge vertical action stack, and an auto-hiding glass HUD.
 @MainActor
 public struct PlayerFeedView: View {
     @StateObject private var coordinator = PlayerPoolCoordinator.shared
     @State private var showingEpisodeDrawer: Bool = false
     @State private var isLiked: Bool = false
+    @State private var isBookmarked: Bool = false
     @State private var showHeartAnimation: Bool = false
     @State private var isHUDVisible: Bool = true
     @State private var autoHideTask: Task<Void, Never>?
@@ -25,9 +26,8 @@ public struct PlayerFeedView: View {
         GeometryReader { geometry in
             ZStack {
                 ReelTheme.pureBlack
-                    .ignoresSafeArea()
 
-                // MARK: - Video Layer
+                // MARK: - Video Layer (Edge-to-Edge Full Screen)
                 if let player = coordinator.activePlayer {
                     VideoPlayer(player: player)
                         .disabled(true)
@@ -52,14 +52,15 @@ public struct PlayerFeedView: View {
                 // MARK: - Double-Tap Heart Burst Animation
                 if showHeartAnimation {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 72))
+                        .font(.system(size: 80))
                         .foregroundColor(ReelTheme.sakuraPink)
-                        .shadow(color: ReelTheme.sakuraPink.opacity(0.6), radius: 16)
+                        .shadow(color: ReelTheme.sakuraPink.opacity(0.8), radius: 20)
                         .scaleEffect(showHeartAnimation ? 1.15 : 0.6)
                         .opacity(showHeartAnimation ? 1.0 : 0.0)
                         .animation(ReelTheme.butterSpring, value: showHeartAnimation)
                 }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
             .contentShape(Rectangle())
             .onTapGesture {
                 toggleHUDVisibility()
@@ -74,6 +75,7 @@ public struct PlayerFeedView: View {
                     .onEnded { handleVerticalSwipe($0) }
             )
         }
+        .ignoresSafeArea()
         .task { loadInitialEpisodes() }
         .sheet(isPresented: $showingEpisodeDrawer) { episodeDrawerSheet }
     }
@@ -82,18 +84,19 @@ public struct PlayerFeedView: View {
     private var topGlassBar: some View {
         HStack(spacing: 12) {
             Text(currentDramaTitle)
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.headline)
+                .fontWeight(.bold)
                 .foregroundColor(ReelTheme.textPrimary)
                 .lineLimit(1)
+                .shadow(color: Color.black.opacity(0.6), radius: 4, y: 1)
 
             if let current = coordinator.currentEpisode {
-                Text("\(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
-                    .font(.caption2)
+                Text("Ep \(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
+                    .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(ReelTheme.sakuraPink)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
                     .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
@@ -103,54 +106,79 @@ public struct PlayerFeedView: View {
 
             Button(action: cyclePlaybackSpeed) {
                 Text(String(format: "%.2fx", coordinator.playbackRate))
-                    .font(.caption2)
+                    .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(ReelTheme.textPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
                     .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 16)
+        .padding(.top, 56)
     }
 
     // MARK: - Bottom Glass HUD
     private var bottomGlassHUD: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             HStack(alignment: .bottom, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
+                // Left: Episode Info & Progress
+                VStack(alignment: .leading, spacing: 6) {
                     if let current = coordinator.currentEpisode {
                         Text(current.title)
-                            .font(.headline)
+                            .font(.title3)
                             .fontWeight(.bold)
                             .foregroundColor(ReelTheme.textPrimary)
+                            .lineLimit(2)
+                            .shadow(color: Color.black.opacity(0.8), radius: 6, y: 2)
 
-                        Text(formattedTimeProgress)
-                            .font(.caption2)
-                            .foregroundColor(ReelTheme.textSecondary)
+                        HStack(spacing: 8) {
+                            Text(formattedTimeProgress)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(ReelTheme.textSecondary)
+
+                            Text("•")
+                                .font(.caption)
+                                .foregroundColor(ReelTheme.textTertiary)
+
+                            Text("Vertical Reel")
+                                .font(.caption)
+                                .foregroundColor(ReelTheme.sakuraMist)
+                        }
                     }
                 }
 
-                Spacer()
+                Spacer(minLength: 12)
 
-                HStack(spacing: 10) {
+                // Right: StoryReel Vertical Action Column
+                VStack(spacing: 16) {
                     glassActionButton(
                         systemImage: isLiked ? "heart.fill" : "heart",
+                        label: isLiked ? "Liked" : "Like",
                         tint: isLiked ? ReelTheme.sakuraPink : .white,
                         action: { isLiked.toggle() }
                     )
 
                     glassActionButton(
-                        systemImage: "list.number",
+                        systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
+                        label: isBookmarked ? "Saved" : "Save",
+                        tint: isBookmarked ? ReelTheme.sakuraPink : .white,
+                        action: { isBookmarked.toggle() }
+                    )
+
+                    glassActionButton(
+                        systemImage: "rectangle.stack.fill",
+                        label: "Episodes",
                         tint: .white,
                         action: { showingEpisodeDrawer = true }
                     )
 
                     glassActionButton(
                         systemImage: coordinator.isPlaying ? "pause.fill" : "play.fill",
+                        label: coordinator.isPlaying ? "Pause" : "Play",
                         tint: .white,
                         action: { coordinator.togglePlayPause() }
                     )
@@ -160,6 +188,7 @@ public struct PlayerFeedView: View {
 
             scrubBar
         }
+        .padding(.bottom, 68)
     }
 
     // MARK: - Interactive Scrub Bar
@@ -175,12 +204,12 @@ public struct PlayerFeedView: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.white.opacity(0.18))
-                    .frame(height: 3)
+                    .fill(Color.white.opacity(0.25))
+                    .frame(height: 4)
 
                 Capsule()
                     .fill(ReelTheme.sakuraPink)
-                    .frame(width: scrubGeo.size.width * displayRatio, height: 3)
+                    .frame(width: max(4, scrubGeo.size.width * displayRatio), height: 4)
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -204,25 +233,33 @@ public struct PlayerFeedView: View {
                     }
             )
         }
-        .frame(height: 12)
+        .frame(height: 16)
         .padding(.horizontal, 16)
-        .padding(.bottom, 12)
     }
 
     // MARK: - Glass Action Button Helper
-    private func glassActionButton(systemImage: String, tint: Color, action: @escaping () -> Void) -> some View {
+    private func glassActionButton(systemImage: String, label: String, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: {
             scheduleAutoHide()
             action()
         }) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(tint)
-                .frame(width: 40, height: 40)
-                .background(.ultraThinMaterial)
-                .clipShape(Circle())
-                .overlay(Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+            VStack(spacing: 3) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(tint)
+                    .frame(width: 46, height: 46)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+                    .shadow(color: Color.black.opacity(0.4), radius: 6, y: 2)
+
+                Text(label)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(ReelTheme.textPrimary)
+                    .shadow(color: Color.black.opacity(0.6), radius: 2)
+            }
         }
+        .buttonStyle(.plain)
     }
 
     private var formattedTimeProgress: String {
@@ -260,7 +297,7 @@ public struct PlayerFeedView: View {
     private func scheduleAutoHide() {
         autoHideTask?.cancel()
         autoHideTask = Task {
-            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            try? await Task.sleep(nanoseconds: 3_500_000_000)
             guard !Task.isCancelled else { return }
             withAnimation(ReelTheme.butterSpring) { isHUDVisible = false }
         }
@@ -270,7 +307,7 @@ public struct PlayerFeedView: View {
         isLiked = true
         showHeartAnimation = true
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 600_000_000)
+            try? await Task.sleep(nanoseconds: 650_000_000)
             showHeartAnimation = false
         }
     }
