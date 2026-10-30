@@ -1,0 +1,40 @@
+name: Daily Drama Stream Aggregator
+
+on:
+  schedule:
+    # Run daily at 04:00 UTC
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aggregate-streams:
+    name: Ingest & Validate Drama Streams
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Codebase
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Run Drama Stream Aggregator
+      run: |
+        python scripts/drama_aggregator.py --output catalog.json --validate
+
+    - name: Commit & Push Updated Catalog
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        if ! git diff --quiet catalog.json; then
+          git add catalog.json
+          git commit -m "chore(catalog): auto-sync daily drama streams [skip ci]"
+          git push origin main
+        else
+          echo "Catalog is already up to date. No changes to commit."
+        fi
