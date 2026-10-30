@@ -252,6 +252,15 @@ final class DramaRepositoryTests: XCTestCase {
     }
 
     func testFetchLatestPlaybackProgress() throws {
+        let drama1 = Drama(id: "d1", title: "Drama 1", synopsis: "Test", genres: ["Romance"], totalEpisodes: 1)
+        let drama2 = Drama(id: "d2", title: "Drama 2", synopsis: "Test", genres: ["Romance"], totalEpisodes: 2)
+        try repository.upsertDrama(drama1)
+        try repository.upsertDrama(drama2)
+
+        let ep1 = Episode(id: "e1", dramaId: "d1", episodeNumber: 1, title: "Ep 1", durationSeconds: 100, streamSources: [])
+        let ep2 = Episode(id: "e2", dramaId: "d2", episodeNumber: 2, title: "Ep 2", durationSeconds: 100, streamSources: [])
+        try repository.upsertEpisodes([ep1, ep2])
+
         let p1 = PlaybackProgress(dramaId: "d1", lastEpisodeId: "e1", lastEpisodeNumber: 1, playheadSeconds: 10, durationSeconds: 100, updatedAt: Date().addingTimeInterval(-100))
         let p2 = PlaybackProgress(dramaId: "d2", lastEpisodeId: "e2", lastEpisodeNumber: 2, playheadSeconds: 20, durationSeconds: 100, updatedAt: Date())
         try repository.upsertPlaybackProgress(p1)
