@@ -51,38 +51,41 @@ public final class DramaRepository: Sendable {
         }
     }
 
-    /// Searches dramas using FTS5 index with fallback to LIKE search.
+    /// Searches dramas using keyword matching across title, synopsis, cast, and genres.
     public func searchDramas(query: String) throws -> [Drama] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return try fetchAllDramas() }
 
         return try database.reader.read { db in
-            let words = trimmed.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
-            let sanitizedFts = words.map { "\"" + $0.replacingOccurrences(of: "\"", with: "\"\"") + "\"*" }.joined(separator: " ")
-            if let ftsRows = try? Row.fetchAll(
-                db,
-                sql: """
-                SELECT dramas.* FROM dramas
-                JOIN dramas_fts ON dramas_fts.rowid = dramas.rowid
-                WHERE dramas_fts MATCH ?
-                ORDER BY dramas.created_at DESC
-                """,
-                arguments: [sanitizedFts]
-            ), !ftsRows.isEmpty {
-                return ftsRows.compactMap { parseDrama(from: $0) }
+            let tokens = trimmed.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { $0.count >= 2 }
+
+            guard !tokens.isEmpty else {
+                let pattern = "%\(trimmed)%"
+                let rows = try Row.fetchAll(
+                    db,
+                    sql: """
+                    SELECT * FROM dramas
+                    WHERE title LIKE ? OR synopsis LIKE ? OR "cast" LIKE ? OR genres LIKE ?
+                    ORDER BY created_at DESC
+                    """,
+                    arguments: [pattern, pattern, pattern, pattern]
+                )
+                return rows.compactMap { parseDrama(from: $0) }
             }
 
-            let pattern = "%\(trimmed)%"
-            let likeRows = try Row.fetchAll(
-                db,
-                sql: """
-                SELECT * FROM dramas
-                WHERE title LIKE ? OR synopsis LIKE ? OR "cast" LIKE ? OR genres LIKE ?
-                ORDER BY created_at DESC
-                """,
-                arguments: [pattern, pattern, pattern, pattern]
-            )
-            return likeRows.compactMap { parseDrama(from: $0) }
+            var conditions: [String] = []
+            var arguments: [DatabaseValueConvertible] = []
+            for token in tokens {
+                let pat = "%\(token)%"
+                conditions.append("(title LIKE ? OR synopsis LIKE ? OR \"cast\" LIKE ? OR genres LIKE ?)")
+                arguments.append(contentsOf: [pat, pat, pat, pat])
+            }
+
+            let sql = "SELECT * FROM dramas WHERE \(conditions.joined(separator: " OR ")) ORDER BY created_at DESC"
+            let rows = try Row.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+            return rows.compactMap { parseDrama(from: $0) }
         }
     }
 
