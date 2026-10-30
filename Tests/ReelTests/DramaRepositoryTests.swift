@@ -235,4 +235,30 @@ final class DramaRepositoryTests: XCTestCase {
         let decodedPlain = try decoder.decode(DownloadState.self, from: plainStringData)
         XCTAssertEqual(decodedPlain, .notDownloaded)
     }
+
+    func testSearchEpisodesAcrossDramas() throws {
+        let drama = Drama(id: "drama-search-ep", title: "Search Drama", synopsis: "Test", genres: ["Drama"], totalEpisodes: 2)
+        try repository.upsertDrama(drama)
+        let ep1 = Episode(id: "ep-s1", dramaId: "drama-search-ep", episodeNumber: 1, title: "Secret Encounter", synopsis: "Opening scene", durationSeconds: 90, streamSources: [])
+        let ep2 = Episode(id: "ep-s2", dramaId: "drama-search-ep", episodeNumber: 2, title: "Midnight Confession", synopsis: "Drama intensifies", durationSeconds: 95, streamSources: [])
+        try repository.upsertEpisodes([ep1, ep2])
+
+        let matches = try repository.searchEpisodes(query: "Secret")
+        XCTAssertEqual(matches.count, 1)
+        XCTAssertEqual(matches.first?.id, "ep-s1")
+
+        let numMatches = try repository.searchEpisodes(query: "2")
+        XCTAssertTrue(numMatches.contains(where: { $0.id == "ep-s2" }))
+    }
+
+    func testFetchLatestPlaybackProgress() throws {
+        let p1 = PlaybackProgress(dramaId: "d1", lastEpisodeId: "e1", lastEpisodeNumber: 1, playheadSeconds: 10, durationSeconds: 100, updatedAt: Date().addingTimeInterval(-100))
+        let p2 = PlaybackProgress(dramaId: "d2", lastEpisodeId: "e2", lastEpisodeNumber: 2, playheadSeconds: 20, durationSeconds: 100, updatedAt: Date())
+        try repository.upsertPlaybackProgress(p1)
+        try repository.upsertPlaybackProgress(p2)
+
+        let latest = try repository.fetchLatestPlaybackProgress()
+        XCTAssertNotNil(latest)
+        XCTAssertEqual(latest?.dramaId, "d2")
+    }
 }

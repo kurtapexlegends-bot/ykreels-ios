@@ -62,4 +62,34 @@ extension DramaRepository {
             return DramaCatalogItem(drama: drama, episodes: episodes)
         }
     }
+
+    /// Searches episodes by matching title, synopsis, or episode number across the database.
+    public func searchEpisodes(query: String, limit: Int = 50) throws -> [Episode] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        return try database.reader.read { db in
+            let pattern = "%\(trimmed)%"
+            let rows = try Row.fetchAll(
+                db,
+                sql: """
+                SELECT * FROM episodes
+                WHERE title LIKE ? OR synopsis LIKE ? OR CAST(episode_number AS TEXT) = ?
+                ORDER BY episode_number ASC LIMIT ?
+                """,
+                arguments: [pattern, pattern, trimmed, limit]
+            )
+            return rows.compactMap { self.parseEpisode(from: $0) }
+        }
+    }
+
+    /// Fetches the most recently updated playback progress record across all dramas.
+    public func fetchLatestPlaybackProgress() throws -> PlaybackProgress? {
+        try database.reader.read { db in
+            guard let row = try Row.fetchOne(db, sql: "SELECT * FROM playback_progress ORDER BY updated_at DESC LIMIT 1") else {
+                return nil
+            }
+            return self.parsePlaybackProgress(from: row)
+        }
+    }
 }
+

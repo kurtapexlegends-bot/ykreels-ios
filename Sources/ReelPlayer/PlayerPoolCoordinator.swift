@@ -36,7 +36,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
         self.currentEpisodes = episodeList
         self.currentIndex = max(0, min(index, episodeList.count - 1))
         rebuildPlayerPool()
-        self.currentDramaTitle = dramaTitle ?? currentEpisode?.dramaId ?? "Wrong Match, Right Crush"
+        if let title = dramaTitle, !title.isEmpty { self.currentDramaTitle = title }
         if initialSeek > 0 { seek(to: initialSeek) }
     }
 

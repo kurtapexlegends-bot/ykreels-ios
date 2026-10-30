@@ -17,8 +17,8 @@ public struct LibraryView: View {
     @State private var syncStatus: String = "Live Feed Connected"
     @State private var isSyncing: Bool = false
     private let cacheLimitMB: Double = 250.0
-    private let featured = WrongMatchRightCrushData.drama
-    private let episodes = WrongMatchRightCrushData.episodes
+    @State private var activeDrama: Drama = WrongMatchRightCrushData.drama
+    @State private var activeEpisodes: [Episode] = WrongMatchRightCrushData.episodes
 
     public init() {}
 
@@ -62,14 +62,26 @@ public struct LibraryView: View {
     }
 
     private func loadPlaybackProgress() {
-        playbackProgress = try? DramaRepository.shared.fetchPlaybackProgress(dramaId: featured.id)
+        if let latest = try? DramaRepository.shared.fetchLatestPlaybackProgress() {
+            self.playbackProgress = latest
+            if let drama = try? DramaRepository.shared.fetchDrama(id: latest.dramaId) {
+                self.activeDrama = drama
+            }
+            if let eps = try? DramaRepository.shared.fetchEpisodes(dramaId: latest.dramaId), !eps.isEmpty {
+                self.activeEpisodes = eps
+            }
+        } else {
+            self.playbackProgress = try? DramaRepository.shared.fetchPlaybackProgress(dramaId: WrongMatchRightCrushData.drama.id)
+            self.activeDrama = WrongMatchRightCrushData.drama
+            self.activeEpisodes = WrongMatchRightCrushData.episodes
+        }
     }
 
     // MARK: - Continue Watching
     private var continueWatchingSection: some View {
         let epNum = playbackProgress?.lastEpisodeNumber ?? 1
-        let ep = episodes.first(where: { $0.episodeNumber == epNum }) ?? episodes.first
-        let epTitle = ep?.title ?? "The Wrong Number"
+        let ep = activeEpisodes.first(where: { $0.episodeNumber == epNum }) ?? activeEpisodes.first
+        let epTitle = ep?.title ?? "Episode \(epNum)"
         let ratio = playbackProgress?.progressRatio ?? 0.0
         let percentStr = playbackProgress?.percentageString ?? "0%"
 
@@ -81,14 +93,14 @@ public struct LibraryView: View {
                 .padding(.horizontal)
 
             Button(action: {
-                let startIdx = max(0, epNum - 1)
+                let startIdx = activeEpisodes.firstIndex(where: { $0.episodeNumber == epNum }) ?? max(0, epNum - 1)
                 let playhead = playbackProgress?.playheadSeconds ?? 0.0
-                PlayerPoolCoordinator.shared.loadEpisodes(episodes, dramaTitle: featured.title, startingAt: startIdx, initialSeek: playhead)
+                PlayerPoolCoordinator.shared.loadEpisodes(activeEpisodes, dramaTitle: activeDrama.title, startingAt: startIdx, initialSeek: playhead)
                 AppNavigationCoordinator.shared.switchToFeed()
             }) {
                 HStack(spacing: 12) {
                     ZStack {
-                        AsyncImage(url: featured.coverURL) { phase in
+                        AsyncImage(url: activeDrama.coverURL) { phase in
                             switch phase {
                             case .success(let image):
                                 image.resizable().aspectRatio(contentMode: .fill)
@@ -127,7 +139,7 @@ public struct LibraryView: View {
                     )
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(featured.title)
+                        Text(activeDrama.title)
                             .font(.subheadline)
                             .fontWeight(.bold)
                             .foregroundColor(ReelTheme.textPrimary)

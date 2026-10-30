@@ -11,7 +11,6 @@ import ReelPlayer
 @MainActor
 public struct PlayerFeedView: View {
     @StateObject private var coordinator = PlayerPoolCoordinator.shared
-    @State private var episodes: [Episode] = []
     @State private var showingEpisodeDrawer: Bool = false
     @State private var isLiked: Bool = false
     @State private var showHeartAnimation: Bool = false
@@ -81,8 +80,7 @@ public struct PlayerFeedView: View {
 
     // MARK: - Top Glass Bar
     private var topGlassBar: some View {
-        let activeEpisodes = coordinator.currentEpisodes.isEmpty ? episodes : coordinator.currentEpisodes
-        return HStack(spacing: 12) {
+        HStack(spacing: 12) {
             Text(currentDramaTitle)
                 .font(.subheadline)
                 .fontWeight(.semibold)
@@ -90,7 +88,7 @@ public struct PlayerFeedView: View {
                 .lineLimit(1)
 
             if let current = coordinator.currentEpisode {
-                Text("\(current.episodeNumber) / \(activeEpisodes.count)")
+                Text("\(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundColor(ReelTheme.sakuraPink)
@@ -228,7 +226,7 @@ public struct PlayerFeedView: View {
     }
 
     private var formattedTimeProgress: String {
-        let cur = coordinator.currentPlayhead
+        let cur = isScrubbing ? (scrubRatio * coordinator.totalDuration) : coordinator.currentPlayhead
         let tot = coordinator.totalDuration
         let currentSeconds = (cur.isFinite && !cur.isNaN && cur >= 0) ? Int(cur) : 0
         let totalSeconds = (tot.isFinite && !tot.isNaN && tot >= 0) ? Int(tot) : 0
@@ -286,10 +284,6 @@ public struct PlayerFeedView: View {
 
     private func loadInitialEpisodes() {
         Task { @MainActor in
-            let initialDrama = (try? await CuratedDramaCatalog.shared.getFeaturedDrama()) ?? WrongMatchRightCrushData.drama
-            let eps = (try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: initialDrama.id)) ?? WrongMatchRightCrushData.episodes
-            self.episodes = eps
-
             coordinator.onProgressUpdate = { episode, playhead, duration in
                 Task { @MainActor in
                     let progress = PlaybackProgress(
@@ -303,6 +297,11 @@ public struct PlayerFeedView: View {
                     try? DramaRepository.shared.upsertPlaybackProgress(progress)
                 }
             }
+
+            guard coordinator.currentEpisodes.isEmpty else { return }
+
+            let initialDrama = (try? await CuratedDramaCatalog.shared.getFeaturedDrama()) ?? WrongMatchRightCrushData.drama
+            let eps = (try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: initialDrama.id)) ?? WrongMatchRightCrushData.episodes
             coordinator.loadEpisodes(eps, dramaTitle: initialDrama.title, startingAt: 0)
             scheduleAutoHide()
 
@@ -314,14 +313,13 @@ public struct PlayerFeedView: View {
 
     // MARK: - Episode Drawer Sheet
     private var episodeDrawerSheet: some View {
-        let activeEpisodes = coordinator.currentEpisodes.isEmpty ? episodes : coordinator.currentEpisodes
-        return EpisodeDrawerSheet(
-            episodes: activeEpisodes,
+        EpisodeDrawerSheet(
+            episodes: coordinator.currentEpisodes,
             currentEpisodeNumber: coordinator.currentEpisode?.episodeNumber ?? 1,
             onSelectEpisode: { ep in
                 showingEpisodeDrawer = false
-                let targetIdx = activeEpisodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
-                coordinator.loadEpisodes(activeEpisodes, dramaTitle: coordinator.currentDramaTitle, startingAt: targetIdx)
+                let targetIdx = coordinator.currentEpisodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
+                coordinator.loadEpisodes(coordinator.currentEpisodes, dramaTitle: coordinator.currentDramaTitle, startingAt: targetIdx)
                 scheduleAutoHide()
             }
         )

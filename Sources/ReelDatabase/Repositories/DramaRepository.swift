@@ -335,7 +335,7 @@ public final class DramaRepository: Sendable {
         )
     }
 
-    private func parseEpisode(from row: Row) -> Episode? {
+    internal func parseEpisode(from row: Row) -> Episode? {
         guard let id: String = row["id"],
               let dramaId: String = row["drama_id"],
               let episodeNumber: Int = row["episode_number"],
@@ -363,7 +363,7 @@ public final class DramaRepository: Sendable {
         )
     }
 
-    private func parsePlaybackProgress(from row: Row) -> PlaybackProgress? {
+    internal func parsePlaybackProgress(from row: Row) -> PlaybackProgress? {
         guard let dramaId: String = row["drama_id"],
               let lastEpId: String = row["last_episode_id"],
               let lastEpNum: Int = row["last_episode_number"] else { return nil }

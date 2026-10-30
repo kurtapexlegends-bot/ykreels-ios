@@ -28,12 +28,17 @@ public struct ExploreView: View {
                             selectedDrama: selectedDrama,
                             onSelectDrama: { switchToDrama($0) },
                             onSelectEpisode: { ep in
-                                PlayerPoolCoordinator.shared.loadEpisodes(
-                                    allEpisodes,
-                                    dramaTitle: selectedDrama.title,
-                                    startingAt: max(0, ep.episodeNumber - 1)
-                                )
-                                AppNavigationCoordinator.shared.switchToFeed()
+                                Task {
+                                    let drama = try? await CuratedDramaCatalog.shared.getDrama(id: ep.dramaId)
+                                    let eps = (try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: ep.dramaId)) ?? [ep]
+                                    let targetIdx = eps.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
+                                    PlayerPoolCoordinator.shared.loadEpisodes(
+                                        eps,
+                                        dramaTitle: drama?.title ?? selectedDrama.title,
+                                        startingAt: targetIdx
+                                    )
+                                    AppNavigationCoordinator.shared.switchToFeed()
+                                }
                             }
                         )
                     } else {
@@ -272,6 +277,17 @@ public struct ExploreView: View {
     }
 
     // MARK: - Genres Section
+    private var allAvailableGenres: [String] {
+        var set = Set<String>()
+        var list: [String] = []
+        for d in allDramas {
+            for g in d.genres {
+                if set.insert(g).inserted { list.append(g) }
+            }
+        }
+        return list.isEmpty ? featured.genres : list
+    }
+
     private var genresSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Genres")
@@ -282,15 +298,18 @@ public struct ExploreView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(featured.genres, id: \.self) { genre in
-                        Text(genre)
-                            .font(.caption)
-                            .foregroundColor(ReelTheme.textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+                    ForEach(allAvailableGenres, id: \.self) { genre in
+                        Button(action: { searchText = genre }) {
+                            Text(genre)
+                                .font(.caption)
+                                .foregroundColor(ReelTheme.textPrimary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal)
@@ -309,23 +328,33 @@ public struct ExploreView: View {
 
             VStack(spacing: 8) {
                 ForEach(featured.cast, id: \.self) { name in
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Image(systemName: "person.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(ReelTheme.sakuraPink)
-                            )
+                    Button(action: {
+                        let cleanName = name.components(separatedBy: " (").first ?? name
+                        searchText = cleanName
+                    }) {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(ReelTheme.sakuraPink)
+                                )
 
-                        Text(name)
-                            .font(.subheadline)
-                            .foregroundColor(ReelTheme.textPrimary)
+                            Text(name)
+                                .font(.subheadline)
+                                .foregroundColor(ReelTheme.textPrimary)
 
-                        Spacer()
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                                .foregroundColor(ReelTheme.textTertiary)
+                        }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                    .buttonStyle(.plain)
                 }
             }
         }

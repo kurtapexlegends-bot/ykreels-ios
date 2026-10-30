@@ -99,4 +99,9 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         XCTAssertEqual(reportedEpisode?.episodeNumber, 1)
         XCTAssertEqual(reportedPlayhead, 42.0)
     }
+
+    func testDramaTitleHandling() {
+        coordinator.loadEpisodes(sampleEpisodes, dramaTitle: "Custom Title", startingAt: 0)
+        XCTAssertEqual(coordinator.currentDramaTitle, "Custom Title")
+    }
 }

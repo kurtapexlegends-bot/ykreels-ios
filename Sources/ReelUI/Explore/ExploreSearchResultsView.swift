@@ -27,7 +27,9 @@ public struct ExploreSearchResultsView: View {
         self.onSelectEpisode = onSelectEpisode
     }
 
-    private var filteredEpisodes: [Episode] {
+    private var matchedEpisodes: [Episode] {
+        let dbEpisodes = (try? DramaRepository.shared.searchEpisodes(query: searchText)) ?? []
+        if !dbEpisodes.isEmpty { return dbEpisodes }
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else { return [] }
         return allEpisodes.filter { ep in
@@ -82,16 +84,16 @@ public struct ExploreSearchResultsView: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("Episode Matches (\(filteredEpisodes.count))")
+                Text("Episode Matches (\(matchedEpisodes.count))")
                     .font(.subheadline).fontWeight(.semibold).foregroundColor(ReelTheme.textPrimary)
                     .padding(.horizontal)
 
-                if filteredEpisodes.isEmpty && matchedDramas.isEmpty {
+                if matchedEpisodes.isEmpty && matchedDramas.isEmpty {
                     Text("No matching dramas or episodes found")
                         .font(.caption).foregroundColor(ReelTheme.textSecondary)
                         .padding(.horizontal)
                 } else {
-                    ForEach(filteredEpisodes) { ep in
+                    ForEach(matchedEpisodes) { ep in
                         Button(action: { onSelectEpisode(ep) }) {
                             HStack(spacing: 12) {
                                 Text("\(ep.episodeNumber)")
