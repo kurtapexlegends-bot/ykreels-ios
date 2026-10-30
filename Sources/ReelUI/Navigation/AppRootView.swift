@@ -36,11 +36,12 @@ public struct AppRootView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .ignoresSafeArea()
 
             // Apple Glassmorphic Floating Tab Bar
             floatingTabBar
         }
-        .ignoresSafeArea(.keyboard)
+        .ignoresSafeArea()
         .tint(ReelTheme.sakuraPink)
         .preferredColorScheme(.dark)
     }
@@ -74,7 +75,7 @@ public struct AppRootView: View {
         )
         .shadow(color: Color.black.opacity(0.45), radius: 12, y: 6)
         .padding(.horizontal, 24)
-        .padding(.bottom, 14)
+        .padding(.bottom, 24)
     }
 
     private func tabBarItem(index: Int, title: String, systemImage: String) -> some View {

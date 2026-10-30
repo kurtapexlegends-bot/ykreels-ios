@@ -15,10 +15,9 @@ public struct PlayerFeedView: View {
     @State private var isLiked: Bool = false
     @State private var isBookmarked: Bool = false
     @State private var showHeartAnimation: Bool = false
+    @State private var showPlayPausePulse: Bool = false
     @State private var isHUDVisible: Bool = true
     @State private var autoHideTask: Task<Void, Never>?
-    @State private var isScrubbing: Bool = false
-    @State private var scrubRatio: Double = 0.0
 
     public init() {}
 
@@ -29,9 +28,11 @@ public struct PlayerFeedView: View {
 
                 // MARK: - Video Layer (Edge-to-Edge Full Screen)
                 if let player = coordinator.activePlayer {
-                    ReelPlayerRepresentable(player: player)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
+                    ReelPlayerRepresentable(player: player) {
+                        coordinator.markFirstFrameRendered()
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
                 }
 
                 // MARK: - Immediate Visual Artwork & Buffering Indicator (Zero Black Freeze)
@@ -39,14 +40,29 @@ public struct PlayerFeedView: View {
                     bufferingPosterLayer(size: geometry.size)
                 }
 
-                // MARK: - Glassmorphism HUD Overlays
+                // MARK: - Glassmorphic HUD Overlays
                 if isHUDVisible {
-                    VStack(alignment: .leading, spacing: 0) {
-                        topGlassBar
-                        Spacer()
-                        bottomGlassHUD
-                    }
+                    ReelHUDOverlayView(
+                        coordinator: coordinator,
+                        isLiked: $isLiked,
+                        isBookmarked: $isBookmarked,
+                        onShowEpisodes: { showingEpisodeDrawer = true },
+                        onUserInteraction: { scheduleAutoHide() }
+                    )
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                }
+
+                // MARK: - Center Play/Pause Pulse Indicator
+                if showPlayPausePulse {
+                    Image(systemName: coordinator.isPlaying ? "play.fill" : "pause.fill")
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 76, height: 76)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.8))
+                        .shadow(color: Color.black.opacity(0.5), radius: 12)
+                        .transition(.scale.combined(with: .opacity))
                 }
 
                 // MARK: - Double-Tap Heart Burst Animation
@@ -63,7 +79,7 @@ public struct PlayerFeedView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
             .contentShape(Rectangle())
             .onTapGesture {
-                toggleHUDVisibility()
+                handleSingleTap()
             }
             .simultaneousGesture(
                 TapGesture(count: 2).onEnded {
@@ -76,14 +92,25 @@ public struct PlayerFeedView: View {
             )
         }
         .ignoresSafeArea()
-        .task { loadInitialEpisodes() }
+        .onAppear {
+            if coordinator.currentEpisodes.isEmpty {
+                loadInitialEpisodes()
+            } else {
+                coordinator.resume()
+                scheduleAutoHide()
+            }
+        }
+        .onDisappear {
+            coordinator.pause()
+            autoHideTask?.cancel()
+        }
         .sheet(isPresented: $showingEpisodeDrawer) { episodeDrawerSheet }
     }
 
     // MARK: - Buffering Poster Layer (Eliminates Black Freeze)
     private func bufferingPosterLayer(size: CGSize) -> some View {
         ZStack {
-            let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL
+            let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL ?? WrongMatchRightCrushData.drama.coverURL
             if let cover = coverURL {
                 AsyncImage(url: cover) { phase in
                     if let img = phase.image {
@@ -91,13 +118,13 @@ public struct PlayerFeedView: View {
                             .aspectRatio(contentMode: .fill)
                             .frame(width: size.width, height: size.height)
                             .clipped()
-                            .blur(radius: 6)
+                            .blur(radius: 8)
                     } else {
-                        ReelTheme.pureBlack
+                        posterFallbackGradient
                     }
                 }
             } else {
-                ReelTheme.pureBlack
+                posterFallbackGradient
             }
 
             VStack(spacing: 10) {
@@ -119,190 +146,30 @@ public struct PlayerFeedView: View {
         .transition(.opacity)
     }
 
-    // MARK: - Top Glass Bar (No Title Truncation)
-    private var topGlassBar: some View {
-        HStack(alignment: .center, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(currentDramaTitle)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(ReelTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                    .shadow(color: Color.black.opacity(0.8), radius: 4, y: 1)
-
-                if let current = coordinator.currentEpisode {
-                    Text("Ep \(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
-                        .font(.caption2.bold())
-                        .foregroundColor(ReelTheme.sakuraPink)
-                }
-            }
-
-            Spacer(minLength: 8)
-
-            Button(action: cyclePlaybackSpeed) {
-                Text(String(format: "%.2fx", coordinator.playbackRate))
-                    .font(.caption2.bold())
-                    .foregroundColor(ReelTheme.textPrimary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 56)
-    }
-
-    // MARK: - Bottom Glass HUD
-    private var bottomGlassHUD: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .bottom, spacing: 14) {
-                // Left: Episode Title & Timecode
-                VStack(alignment: .leading, spacing: 4) {
-                    if let current = coordinator.currentEpisode {
-                        Text(current.title)
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .foregroundColor(ReelTheme.textPrimary)
-                            .lineLimit(2)
-                            .shadow(color: Color.black.opacity(0.8), radius: 4, y: 1)
-
-                        HStack(spacing: 6) {
-                            Text(formattedTimeProgress)
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(ReelTheme.textSecondary)
-
-                            Text("•")
-                                .font(.caption2)
-                                .foregroundColor(ReelTheme.textTertiary)
-
-                            Text("Vertical 9:16")
-                                .font(.caption2)
-                                .foregroundColor(ReelTheme.sakuraMist)
-                        }
-                    }
-                }
-
-                Spacer(minLength: 10)
-
-                // Right: Compact Vertical Actions (Clean, Unobtrusive)
-                VStack(spacing: 10) {
-                    compactActionButton(
-                        systemImage: isLiked ? "heart.fill" : "heart",
-                        label: isLiked ? "Liked" : "Like",
-                        tint: isLiked ? ReelTheme.sakuraPink : .white,
-                        action: { isLiked.toggle() }
-                    )
-
-                    compactActionButton(
-                        systemImage: isBookmarked ? "bookmark.fill" : "bookmark",
-                        label: isBookmarked ? "Saved" : "Save",
-                        tint: isBookmarked ? ReelTheme.sakuraPink : .white,
-                        action: { isBookmarked.toggle() }
-                    )
-
-                    compactActionButton(
-                        systemImage: "rectangle.stack.fill",
-                        label: "Episodes",
-                        tint: .white,
-                        action: { showingEpisodeDrawer = true }
-                    )
-                }
-            }
-            .padding(.horizontal, 16)
-
-            scrubBar
-        }
-        .padding(.bottom, 78)
-    }
-
-    // MARK: - Interactive Scrub Bar
-    private var scrubBar: some View {
-        GeometryReader { scrubGeo in
-            let playheadRatio: CGFloat = {
-                guard coordinator.totalDuration > 0,
-                      coordinator.totalDuration.isFinite,
-                      coordinator.currentPlayhead.isFinite else { return 0 }
-                return max(0, min(CGFloat(coordinator.currentPlayhead / coordinator.totalDuration), 1.0))
-            }()
-            let displayRatio = isScrubbing ? CGFloat(scrubRatio) : playheadRatio
-
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.white.opacity(0.25))
-                    .frame(height: 3)
-
-                Capsule()
-                    .fill(ReelTheme.sakuraPink)
-                    .frame(width: max(4, scrubGeo.size.width * displayRatio), height: 3)
-            }
-            .frame(maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        guard coordinator.totalDuration > 0, coordinator.totalDuration.isFinite else { return }
-                        isScrubbing = true
-                        scrubRatio = max(0, min(Double(value.location.x / scrubGeo.size.width), 1.0))
-                        scheduleAutoHide()
-                    }
-                    .onEnded { value in
-                        guard coordinator.totalDuration > 0, coordinator.totalDuration.isFinite else {
-                            isScrubbing = false
-                            return
-                        }
-                        let finalRatio = max(0, min(Double(value.location.x / scrubGeo.size.width), 1.0))
-                        coordinator.seek(to: finalRatio * coordinator.totalDuration)
-                        isScrubbing = false
-                        scheduleAutoHide()
-                    }
-            )
-        }
-        .frame(height: 14)
-        .padding(.horizontal, 16)
-    }
-
-    // MARK: - Compact Action Button
-    private func compactActionButton(systemImage: String, label: String, tint: Color, action: @escaping () -> Void) -> some View {
-        Button(action: {
-            scheduleAutoHide()
-            action()
-        }) {
-            VStack(spacing: 2) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(tint)
-                    .frame(width: 38, height: 38)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .overlay(Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
-                    .shadow(color: Color.black.opacity(0.4), radius: 4, y: 2)
-
-                Text(label)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(ReelTheme.textPrimary)
-                    .shadow(color: Color.black.opacity(0.6), radius: 2)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var formattedTimeProgress: String {
-        let cur = isScrubbing ? (scrubRatio * coordinator.totalDuration) : coordinator.currentPlayhead
-        let tot = coordinator.totalDuration
-        let currentSeconds = (cur.isFinite && !cur.isNaN && cur >= 0) ? Int(cur) : 0
-        let totalSeconds = (tot.isFinite && !tot.isNaN && tot >= 0) ? Int(tot) : 0
-        return String(format: "%d:%02d / %d:%02d", currentSeconds / 60, currentSeconds % 60, totalSeconds / 60, totalSeconds % 60)
-    }
-
-    private var currentDramaTitle: String {
-        coordinator.currentDramaTitle
+    private var posterFallbackGradient: some View {
+        LinearGradient(
+            colors: [Color(white: 0.16), Color(white: 0.08)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     // MARK: - Gestures & Interactions
+    private func handleSingleTap() {
+        coordinator.togglePlayPause()
+        withAnimation(.easeOut(duration: 0.2)) {
+            showPlayPausePulse = true
+            isHUDVisible = true
+        }
+        scheduleAutoHide()
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            withAnimation(.easeIn(duration: 0.25)) {
+                showPlayPausePulse = false
+            }
+        }
+    }
+
     private func handleVerticalSwipe(_ value: DragGesture.Value) {
         let vertical = value.translation.height
         let horizontal = value.translation.width
@@ -317,11 +184,6 @@ public struct PlayerFeedView: View {
         }
     }
 
-    private func toggleHUDVisibility() {
-        withAnimation(ReelTheme.butterSpring) { isHUDVisible.toggle() }
-        if isHUDVisible { scheduleAutoHide() }
-    }
-
     private func scheduleAutoHide() {
         autoHideTask?.cancel()
         autoHideTask = Task {
@@ -332,18 +194,12 @@ public struct PlayerFeedView: View {
     }
 
     private func triggerDoubleTapLike() {
-        isLiked = true; showHeartAnimation = true
+        isLiked = true
+        showHeartAnimation = true
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 650_000_000)
             showHeartAnimation = false
         }
-    }
-
-    private func cyclePlaybackSpeed() {
-        scheduleAutoHide()
-        let rates: [Float] = [1.0, 1.25, 1.5, 2.0]
-        let nextIndex = ((rates.firstIndex(of: coordinator.playbackRate) ?? 0) + 1) % rates.count
-        coordinator.setPlaybackRate(rates[nextIndex])
     }
 
     private func loadInitialEpisodes() {

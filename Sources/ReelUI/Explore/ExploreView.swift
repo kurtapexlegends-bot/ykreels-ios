@@ -99,19 +99,20 @@ public struct ExploreView: View {
         Button(action: { switchToDrama(featured) }) {
             ZStack(alignment: .bottomLeading) {
                 if let bannerURL = featured.bannerURL ?? featured.coverURL {
-                    AsyncImage(url: bannerURL) { phase in
-                        if let img = phase.image {
-                            img.resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(maxWidth: .infinity, maxHeight: 280)
-                                .clipped()
-                        } else {
-                            heroFallbackBackground
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 280)
-                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
+                    Color.clear
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 280)
+                        .overlay(
+                            AsyncImage(url: bannerURL) { phase in
+                                if let img = phase.image {
+                                    img.resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                } else {
+                                    heroFallbackBackground
+                                }
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
                 } else {
                     heroFallbackBackground
                 }
@@ -325,12 +326,9 @@ public struct ExploreView: View {
 
     // MARK: - Genres Section
     private var allAvailableGenres: [String] {
-        var set = Set<String>()
-        var list: [String] = []
+        var set = Set<String>(), list: [String] = []
         for d in allDramas {
-            for g in d.genres {
-                if set.insert(g).inserted { list.append(g) }
-            }
+            for g in d.genres where set.insert(g).inserted { list.append(g) }
         }
         return list.isEmpty ? featured.genres : list
     }

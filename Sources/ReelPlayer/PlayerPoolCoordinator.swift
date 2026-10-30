@@ -12,7 +12,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
     @Published public private(set) var currentEpisode: Episode?
     @Published public private(set) var currentEpisodes: [Episode] = []
     @Published public private(set) var currentDramaTitle: String = "Wrong Match, Right Crush"
-    @Published public private(set) var currentDramaCoverURL: URL?
+    @Published public private(set) var currentDramaCoverURL: URL? = URL(string: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&auto=format&fit=crop&q=80")
     @Published public private(set) var isPlaying: Bool = false
     @Published public private(set) var isBuffering: Bool = true
     @Published public private(set) var hasRenderedFirstFrame: Bool = false
@@ -28,8 +28,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
     public init() {
         #if os(iOS)
         let audio = AVAudioSession.sharedInstance()
-        try? audio.setCategory(.playback, mode: .moviePlayback)
-        try? audio.setActive(true)
+        try? audio.setCategory(.playback, mode: .moviePlayback); try? audio.setActive(true)
         #endif
     }
 
@@ -116,6 +115,21 @@ public final class PlayerPoolCoordinator: ObservableObject {
         isPlaying.toggle()
         if isPlaying && playbackRate != 1.0 { player.rate = playbackRate }
         reportProgress()
+    }
+
+    public func pause() {
+        guard isPlaying, let player = currentPlayer else { return }
+        player.pause(); isPlaying = false; reportProgress()
+    }
+
+    public func resume() {
+        guard !isPlaying, let player = currentPlayer else { return }
+        player.play(); if playbackRate != 1.0 { player.rate = playbackRate }
+        isPlaying = true; reportProgress()
+    }
+
+    public func markFirstFrameRendered() {
+        isBuffering = false; hasRenderedFirstFrame = true
     }
 
     public func seek(to seconds: Double) {

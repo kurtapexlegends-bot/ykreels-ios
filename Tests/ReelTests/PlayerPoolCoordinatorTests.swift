@@ -112,4 +112,25 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.isBuffering)
         XCTAssertFalse(coordinator.hasRenderedFirstFrame)
     }
+
+    func testExplicitPauseAndResume() {
+        coordinator.loadEpisodes(sampleEpisodes, startingAt: 0)
+        XCTAssertTrue(coordinator.isPlaying)
+
+        coordinator.pause()
+        XCTAssertFalse(coordinator.isPlaying)
+
+        coordinator.resume()
+        XCTAssertTrue(coordinator.isPlaying)
+    }
+
+    func testMarkFirstFrameRendered() {
+        coordinator.loadEpisodes(sampleEpisodes, startingAt: 0)
+        XCTAssertTrue(coordinator.isBuffering)
+        XCTAssertFalse(coordinator.hasRenderedFirstFrame)
+
+        coordinator.markFirstFrameRendered()
+        XCTAssertFalse(coordinator.isBuffering)
+        XCTAssertTrue(coordinator.hasRenderedFirstFrame)
+    }
 }
