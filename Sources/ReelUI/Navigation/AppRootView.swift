@@ -9,12 +9,12 @@ import ReelPlayer
 /// Tab 3: Library (Continue watching, 250MB cache manager)
 @MainActor
 public struct AppRootView: View {
-    @State private var selectedTab: Int = 0
+    @ObservedObject private var navigation = AppNavigationCoordinator.shared
 
     public init() {}
 
     public var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $navigation.selectedTab) {
             // Tab 1: Feed
             PlayerFeedView()
                 .tabItem {

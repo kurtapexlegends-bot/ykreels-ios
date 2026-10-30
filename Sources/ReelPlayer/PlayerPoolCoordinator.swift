@@ -10,20 +10,17 @@ public final class PlayerPoolCoordinator: ObservableObject {
     public static let shared = PlayerPoolCoordinator()
 
     @Published public private(set) var currentEpisode: Episode?
+    @Published public private(set) var currentEpisodes: [Episode] = []
+    @Published public private(set) var currentDramaTitle: String = "Wrong Match, Right Crush"
     @Published public private(set) var isPlaying: Bool = false
     @Published public private(set) var currentPlayhead: Double = 0.0
     @Published public private(set) var totalDuration: Double = 0.0
     @Published public private(set) var playbackRate: Float = 1.0
     public var onProgressUpdate: ((Episode, Double, Double) -> Void)?
 
-    private var currentPlayer: AVPlayer?
-    private var nextPlayer: AVPlayer?
-    private var previousPlayer: AVPlayer?
-    private var timeObserverToken: Any?
-    private var itemEndObserver: Any?
-    private var episodes: [Episode] = []
-    private var currentIndex: Int = 0
-    private var lastProgressReport: Date = .distantPast
+    private var currentPlayer: AVPlayer?, nextPlayer: AVPlayer?, previousPlayer: AVPlayer?
+    private var timeObserverToken: Any?, itemEndObserver: Any?
+    private var episodes: [Episode] = [], currentIndex: Int = 0, lastProgressReport: Date = .distantPast
 
     public init() {
         #if os(iOS)
@@ -33,11 +30,13 @@ public final class PlayerPoolCoordinator: ObservableObject {
         #endif
     }
 
-    public func loadEpisodes(_ episodeList: [Episode], startingAt index: Int = 0, initialSeek: Double = 0.0) {
+    public func loadEpisodes(_ episodeList: [Episode], dramaTitle: String? = nil, startingAt index: Int = 0, initialSeek: Double = 0.0) {
         guard !episodeList.isEmpty else { return }
         self.episodes = episodeList
+        self.currentEpisodes = episodeList
         self.currentIndex = max(0, min(index, episodeList.count - 1))
         rebuildPlayerPool()
+        self.currentDramaTitle = dramaTitle ?? currentEpisode?.dramaId ?? "Wrong Match, Right Crush"
         if initialSeek > 0 { seek(to: initialSeek) }
     }
 
@@ -66,49 +65,35 @@ public final class PlayerPoolCoordinator: ObservableObject {
 
     private func prepareAdjacentPlayers() {
         let nextIdx = currentIndex + 1
-        if nextIdx < episodes.count, let url = episodes[nextIdx].primaryStreamURL {
-            self.nextPlayer = makeConfiguredPlayer(url: url)
-        }
+        if nextIdx < episodes.count, let url = episodes[nextIdx].primaryStreamURL { self.nextPlayer = makeConfiguredPlayer(url: url) }
         let prevIdx = currentIndex - 1
-        if prevIdx >= 0, let url = episodes[prevIdx].primaryStreamURL {
-            self.previousPlayer = makeConfiguredPlayer(url: url)
-        }
+        if prevIdx >= 0, let url = episodes[prevIdx].primaryStreamURL { self.previousPlayer = makeConfiguredPlayer(url: url) }
     }
 
     public func advanceToNextEpisode() {
         guard currentIndex + 1 < episodes.count else { isPlaying = false; return }
-        reportProgress()
-        releasePlayer(&previousPlayer)
-        detachObservers()
+        reportProgress(); releasePlayer(&previousPlayer); detachObservers()
         currentPlayer?.pause()
         previousPlayer = currentPlayer
         currentIndex += 1
-        currentPlayer = nextPlayer
-        nextPlayer = nil
+        currentPlayer = nextPlayer; nextPlayer = nil
         currentEpisode = episodes[currentIndex]
         activateCurrentPlayer()
-
-        let nextIdx = currentIndex + 1
-        if nextIdx < episodes.count, let url = episodes[nextIdx].primaryStreamURL {
+        if currentIndex + 1 < episodes.count, let url = episodes[currentIndex + 1].primaryStreamURL {
             self.nextPlayer = makeConfiguredPlayer(url: url)
         }
     }
 
     public func returnToPreviousEpisode() {
         guard currentIndex > 0 else { return }
-        reportProgress()
-        releasePlayer(&nextPlayer)
-        detachObservers()
+        reportProgress(); releasePlayer(&nextPlayer); detachObservers()
         currentPlayer?.pause()
         nextPlayer = currentPlayer
         currentIndex -= 1
-        currentPlayer = previousPlayer
-        previousPlayer = nil
+        currentPlayer = previousPlayer; previousPlayer = nil
         currentEpisode = episodes[currentIndex]
         activateCurrentPlayer()
-
-        let prevIdx = currentIndex - 1
-        if prevIdx >= 0, let url = episodes[prevIdx].primaryStreamURL {
+        if currentIndex - 1 >= 0, let url = episodes[currentIndex - 1].primaryStreamURL {
             self.previousPlayer = makeConfiguredPlayer(url: url)
         }
     }
@@ -136,8 +121,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
     public func seek(to seconds: Double) {
         guard let player = currentPlayer else { return }
         currentPlayhead = seconds
-        let time = CMTime(seconds: seconds, preferredTimescale: 600)
-        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
         reportProgress()
     }
 
@@ -158,19 +142,13 @@ public final class PlayerPoolCoordinator: ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self = self else { return }
             self.currentPlayhead = time.seconds
-            if let dur = player.currentItem?.duration.seconds, dur.isFinite, !dur.isNaN, dur > 0 {
-                self.totalDuration = dur
-            }
-            if Date().timeIntervalSince(self.lastProgressReport) >= 3.0 {
-                self.reportProgress()
-            }
+            if let dur = player.currentItem?.duration.seconds, dur.isFinite, !dur.isNaN, dur > 0 { self.totalDuration = dur }
+            if Date().timeIntervalSince(self.lastProgressReport) >= 3.0 { self.reportProgress() }
         }
         if let item = player.currentItem {
             itemEndObserver = NotificationCenter.default.addObserver(
                 forName: .AVPlayerItemDidPlayToEndTime, object: item, queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor [weak self] in self?.advanceToNextEpisode() }
-            }
+            ) { [weak self] _ in Task { @MainActor [weak self] in self?.advanceToNextEpisode() } }
         }
     }
 
@@ -187,9 +165,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
 
     public func cleanupAllPlayers() {
         detachObservers()
-        releasePlayer(&currentPlayer)
-        releasePlayer(&nextPlayer)
-        releasePlayer(&previousPlayer)
+        releasePlayer(&currentPlayer); releasePlayer(&nextPlayer); releasePlayer(&previousPlayer)
     }
 
     public var activePlayer: AVPlayer? { currentPlayer }

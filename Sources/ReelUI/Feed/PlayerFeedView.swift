@@ -17,6 +17,8 @@ public struct PlayerFeedView: View {
     @State private var showHeartAnimation: Bool = false
     @State private var isHUDVisible: Bool = true
     @State private var autoHideTask: Task<Void, Never>?
+    @State private var isScrubbing: Bool = false
+    @State private var scrubRatio: Double = 0.0
 
     public init() {}
 
@@ -30,7 +32,7 @@ public struct PlayerFeedView: View {
                 if let player = coordinator.activePlayer {
                     VideoPlayer(player: player)
                         .disabled(true)
-                        .aspectRatio(ReelTheme.verticalReelAspectRatio, contentMode: .fit)
+                        .aspectRatio(ReelTheme.verticalReelAspectRatio, contentMode: .fill)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipped()
                 } else {
@@ -60,10 +62,13 @@ public struct PlayerFeedView: View {
                 }
             }
             .contentShape(Rectangle())
-            .gesture(
-                TapGesture(count: 2)
-                    .onEnded { triggerDoubleTapLike() }
-                    .exclusively(before: TapGesture(count: 1).onEnded { toggleHUDVisibility() })
+            .onTapGesture {
+                toggleHUDVisibility()
+            }
+            .simultaneousGesture(
+                TapGesture(count: 2).onEnded {
+                    triggerDoubleTapLike()
+                }
             )
             .gesture(
                 DragGesture(minimumDistance: 35)
@@ -76,7 +81,8 @@ public struct PlayerFeedView: View {
 
     // MARK: - Top Glass Bar
     private var topGlassBar: some View {
-        HStack(spacing: 12) {
+        let activeEpisodes = coordinator.currentEpisodes.isEmpty ? episodes : coordinator.currentEpisodes
+        return HStack(spacing: 12) {
             Text(currentDramaTitle)
                 .font(.subheadline)
                 .fontWeight(.semibold)
@@ -84,7 +90,7 @@ public struct PlayerFeedView: View {
                 .lineLimit(1)
 
             if let current = coordinator.currentEpisode {
-                Text("\(current.episodeNumber) / \(episodes.count)")
+                Text("\(current.episodeNumber) / \(activeEpisodes.count)")
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundColor(ReelTheme.sakuraPink)
@@ -92,9 +98,7 @@ public struct PlayerFeedView: View {
                     .padding(.vertical, 4)
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
-                    )
+                    .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
             }
 
             Spacer()
@@ -108,9 +112,7 @@ public struct PlayerFeedView: View {
                     .padding(.vertical, 5)
                     .background(.ultraThinMaterial)
                     .clipShape(Capsule())
-                    .overlay(
-                        Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
-                    )
+                    .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
             }
         }
         .padding(.horizontal, 16)
@@ -171,6 +173,7 @@ public struct PlayerFeedView: View {
                       coordinator.currentPlayhead.isFinite else { return 0 }
                 return max(0, min(CGFloat(coordinator.currentPlayhead / coordinator.totalDuration), 1.0))
             }()
+            let displayRatio = isScrubbing ? CGFloat(scrubRatio) : playheadRatio
 
             ZStack(alignment: .leading) {
                 Capsule()
@@ -179,7 +182,7 @@ public struct PlayerFeedView: View {
 
                 Capsule()
                     .fill(ReelTheme.sakuraPink)
-                    .frame(width: scrubGeo.size.width * playheadRatio, height: 3)
+                    .frame(width: scrubGeo.size.width * displayRatio, height: 3)
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -187,8 +190,18 @@ public struct PlayerFeedView: View {
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         guard coordinator.totalDuration > 0, coordinator.totalDuration.isFinite else { return }
-                        let ratio = max(0, min(value.location.x / scrubGeo.size.width, 1.0))
-                        coordinator.seek(to: Double(ratio) * coordinator.totalDuration)
+                        isScrubbing = true
+                        scrubRatio = max(0, min(Double(value.location.x / scrubGeo.size.width), 1.0))
+                        scheduleAutoHide()
+                    }
+                    .onEnded { value in
+                        guard coordinator.totalDuration > 0, coordinator.totalDuration.isFinite else {
+                            isScrubbing = false
+                            return
+                        }
+                        let finalRatio = max(0, min(Double(value.location.x / scrubGeo.size.width), 1.0))
+                        coordinator.seek(to: finalRatio * coordinator.totalDuration)
+                        isScrubbing = false
                         scheduleAutoHide()
                     }
             )
@@ -210,9 +223,7 @@ public struct PlayerFeedView: View {
                 .frame(width: 40, height: 40)
                 .background(.ultraThinMaterial)
                 .clipShape(Circle())
-                .overlay(
-                    Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
-                )
+                .overlay(Circle().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
         }
     }
 
@@ -225,16 +236,7 @@ public struct PlayerFeedView: View {
     }
 
     private var currentDramaTitle: String {
-        guard let dramaId = coordinator.currentEpisode?.dramaId else {
-            return "Wrong Match, Right Crush"
-        }
-        switch dramaId {
-        case "drama-final-boss": return "Move Aside! I'm the Final Boss"
-        case "drama-ceo-contract-wife": return "The CEO's Contract Wife"
-        case "drama-cursed-alpha": return "The Cursed Alpha's Mate"
-        case "drama-fashion-queen": return "The Fashion Queen Strikes Back"
-        default: return "Wrong Match, Right Crush"
-        }
+        coordinator.currentDramaTitle
     }
 
     // MARK: - Gestures & Interactions
@@ -301,7 +303,7 @@ public struct PlayerFeedView: View {
                     try? DramaRepository.shared.upsertPlaybackProgress(progress)
                 }
             }
-            coordinator.loadEpisodes(eps, startingAt: 0)
+            coordinator.loadEpisodes(eps, dramaTitle: initialDrama.title, startingAt: 0)
             scheduleAutoHide()
 
             Task(priority: .utility) {
@@ -312,13 +314,14 @@ public struct PlayerFeedView: View {
 
     // MARK: - Episode Drawer Sheet
     private var episodeDrawerSheet: some View {
-        EpisodeDrawerSheet(
-            episodes: episodes,
+        let activeEpisodes = coordinator.currentEpisodes.isEmpty ? episodes : coordinator.currentEpisodes
+        return EpisodeDrawerSheet(
+            episodes: activeEpisodes,
             currentEpisodeNumber: coordinator.currentEpisode?.episodeNumber ?? 1,
             onSelectEpisode: { ep in
                 showingEpisodeDrawer = false
-                let targetIdx = episodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
-                coordinator.loadEpisodes(episodes, startingAt: targetIdx)
+                let targetIdx = activeEpisodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
+                coordinator.loadEpisodes(activeEpisodes, dramaTitle: coordinator.currentDramaTitle, startingAt: targetIdx)
                 scheduleAutoHide()
             }
         )

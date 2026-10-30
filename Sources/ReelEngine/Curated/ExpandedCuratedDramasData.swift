@@ -8,24 +8,21 @@ import ReelCore
 /// 4. The Fashion Queen Strikes Back (Workplace Drama / Glow-Up)
 public enum ExpandedCuratedDramasData {
 
+    private static let verticalStreamURLs: [URL] = [
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/001_7649607267184102664_576x1024_%2849%29%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E5%B9%BF_%23%E5%A4%A7%E7%BB%93%E5%B1%80%E5%A4%AA%E7%B2%BE%E5%BD%A9%E4%BA%86.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/003_7634421520667839752_576x1024_%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E6%96%87%20%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E8%96%A6%20%23fyp%20%23%E5%B0%8F%E8%AA%AA.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/007_7634317672930561301_576x1024_7634317672930561301.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/010_7565673804605705490_720x1280_%E3%83%A4%E3%83%B3%E3%83%87%E3%83%AC%E3%81%AE%E5%BC%B7%E5%88%B6%E6%84%9B-4%20%E2%9C%A8FlickReels%E3%82%A2%E3%83%97%E3%83%AA%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B.mp4")!,
+        URL(string: "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/011_7458979992546970888_576x1024_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E4%B8%8A%E7%83%AD%E9%97%A8%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E7%83%AD%E6%92%AD%E7%9F%AD%E5%89%A7%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E5%AE%98%20%23.mp4")!
+    ]
+
     // MARK: - Helper Stream Generator
     private static func makeStreams(prefix: String, ep: Int) -> [StreamSource] {
-        let formatted = String(format: "%02d", ep)
+        let primaryURL = verticalStreamURLs[(ep - 1) % verticalStreamURLs.count]
+        let secondaryURL = verticalStreamURLs[ep % verticalStreamURLs.count]
         return [
-            StreamSource(
-                id: "\(prefix)-hls-\(ep)",
-                url: URL(string: "https://stream.ykreels.internal/dramas/\(prefix)/ep\(formatted)/index.m3u8")!,
-                format: .hls,
-                quality: .fhd1080p,
-                isDefault: true
-            ),
-            StreamSource(
-                id: "\(prefix)-mp4-\(ep)",
-                url: URL(string: "https://stream.ykreels.internal/dramas/\(prefix)/ep\(formatted)/1080p.mp4")!,
-                format: .mp4,
-                quality: .hd720p,
-                isDefault: false
-            )
+            StreamSource(id: "\(prefix)-mp4-\(ep)-pri", url: primaryURL, format: .mp4, quality: .fhd1080p, isDefault: true),
+            StreamSource(id: "\(prefix)-mp4-\(ep)-sec", url: secondaryURL, format: .mp4, quality: .hd720p, isDefault: false)
         ]
     }
 
@@ -34,8 +31,8 @@ public enum ExpandedCuratedDramasData {
         id: "drama-final-boss",
         title: "Move Aside! I'm the Final Boss",
         synopsis: "Dumped by his materialistic fiancée on their anniversary for being 'just a delivery driver', Ethan reveals his true identity as the reclusive global tycoon controlling the city's largest financial empire.",
-        coverURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/final-boss/cover.jpg"),
-        bannerURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/final-boss/banner.jpg"),
+        coverURL: URL(string: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80"),
+        bannerURL: URL(string: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&auto=format&fit=crop&q=80"),
         genres: ["Billionaire", "Revenge", "Drama"],
         tags: ["Hidden Identity", "Underdog", "Payback"],
         totalEpisodes: 30,
@@ -60,8 +57,8 @@ public enum ExpandedCuratedDramasData {
         id: "drama-ceo-contract-wife",
         title: "The CEO's Contract Wife",
         synopsis: "To pay for her grandmother's urgent medical treatment, quiet accountant Clara enters a strict 1-year marriage contract with the ruthless billionaire Damien Vance. But what began as business quickly turns into irresistible passion.",
-        coverURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/ceo-contract/cover.jpg"),
-        bannerURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/ceo-contract/banner.jpg"),
+        coverURL: URL(string: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80"),
+        bannerURL: URL(string: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&auto=format&fit=crop&q=80"),
         genres: ["Romance", "Billionaire", "Drama"],
         tags: ["Contract Marriage", "Enemies to Lovers", "CEO"],
         totalEpisodes: 28,
@@ -86,8 +83,8 @@ public enum ExpandedCuratedDramasData {
         id: "drama-cursed-alpha",
         title: "The Cursed Alpha's Mate",
         synopsis: "Exiled from the Silvercrest Pack after being falsely accused of treason, half-wolf healer Maeve discovers the cursed, feared Alpha King Kaelen in the forbidden mountains—only to realize he is her destined fated mate.",
-        coverURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/cursed-alpha/cover.jpg"),
-        bannerURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/cursed-alpha/banner.jpg"),
+        coverURL: URL(string: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80"),
+        bannerURL: URL(string: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=1200&auto=format&fit=crop&q=80"),
         genres: ["Fantasy", "Romance", "Werewolf"],
         tags: ["Fated Mates", "Alpha King", "Forbidden Love"],
         totalEpisodes: 26,
@@ -112,8 +109,8 @@ public enum ExpandedCuratedDramasData {
         id: "drama-fashion-queen",
         title: "The Fashion Queen Strikes Back",
         synopsis: "After her designs are stolen by a privileged nepo-baby and she is publicly fired, brilliant couture stylist Maya launches an undercover luxury label that sparks an international fashion war.",
-        coverURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/fashion-queen/cover.jpg"),
-        bannerURL: URL(string: "https://raw.githubusercontent.com/ykreels/assets/main/dramas/fashion-queen/banner.jpg"),
+        coverURL: URL(string: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80"),
+        bannerURL: URL(string: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&auto=format&fit=crop&q=80"),
         genres: ["Drama", "Revenge", "Romance"],
         tags: ["Workplace", "Glow-Up", "Fashion Empire"],
         totalEpisodes: 24,

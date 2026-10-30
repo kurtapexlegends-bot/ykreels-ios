@@ -13,27 +13,41 @@ import sys
 import urllib.request
 import urllib.error
 
-# Verified high-speed public test streams (HLS and direct MP4)
+# Verified high-speed vertical 9:16 micro-drama streams (MP4)
 VERIFIED_STREAMS = [
     {
-        "id": "stream-mux-bbb",
-        "url": "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-        "format": "hls",
+        "id": "stream-hf-drama-01",
+        "url": "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/001_7649607267184102664_576x1024_%2849%29%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E5%B9%BF_%23%E5%A4%A7%E7%BB%93%E5%B1%80%E5%A4%AA%E7%B2%BE%E5%BD%A9%E4%BA%86.mp4",
+        "format": "mp4",
         "quality": "1080p",
         "isDefault": True
     },
     {
-        "id": "stream-apple-bipbop",
-        "url": "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8",
-        "format": "hls",
+        "id": "stream-hf-drama-02",
+        "url": "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/003_7634421520667839752_576x1024_%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E6%96%87%20%23%E5%B0%8F%E8%AA%AA%E6%8E%A8%E8%96%A6%20%23fyp%20%23%E5%B0%8F%E8%AA%AA.mp4",
+        "format": "mp4",
         "quality": "1080p",
         "isDefault": False
     },
     {
-        "id": "stream-akamai-test",
-        "url": "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8",
-        "format": "hls",
+        "id": "stream-hf-drama-03",
+        "url": "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/007_7634317672930561301_576x1024_7634317672930561301.mp4",
+        "format": "mp4",
+        "quality": "1080p",
+        "isDefault": False
+    },
+    {
+        "id": "stream-hf-drama-04",
+        "url": "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134357Z/010_7565673804605705490_720x1280_%E3%83%A4%E3%83%B3%E3%83%87%E3%83%AC%E3%81%AE%E5%BC%B7%E5%88%B6%E6%84%9B-4%20%E2%9C%A8FlickReels%E3%82%A2%E3%83%97%E3%83%AA%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B.mp4",
+        "format": "mp4",
         "quality": "720p",
+        "isDefault": False
+    },
+    {
+        "id": "stream-hf-drama-05",
+        "url": "https://huggingface.co/datasets/Orannue/data_vertical/resolve/main/tiktok/20260610T134524Z/011_7458979992546970888_576x1024_%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E4%B8%8A%E7%83%AD%E9%97%A8%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E7%83%AD%E6%92%AD%E7%9F%AD%E5%89%A7%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0%E4%B8%AD%23%E7%9F%AD%E5%89%A7%E6%8E%A8%E8%8D%90%E5%AE%98%20%23.mp4",
+        "format": "mp4",
+        "quality": "1080p",
         "isDefault": False
     }
 ]

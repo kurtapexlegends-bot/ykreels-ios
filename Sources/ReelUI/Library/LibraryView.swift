@@ -83,18 +83,48 @@ public struct LibraryView: View {
             Button(action: {
                 let startIdx = max(0, epNum - 1)
                 let playhead = playbackProgress?.playheadSeconds ?? 0.0
-                PlayerPoolCoordinator.shared.loadEpisodes(episodes, startingAt: startIdx, initialSeek: playhead)
+                PlayerPoolCoordinator.shared.loadEpisodes(episodes, dramaTitle: featured.title, startingAt: startIdx, initialSeek: playhead)
+                AppNavigationCoordinator.shared.switchToFeed()
             }) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 72, height: 96)
+                        AsyncImage(url: featured.coverURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().aspectRatio(contentMode: .fill)
+                            case .failure:
+                                ZStack {
+                                    Color.white.opacity(0.06)
+                                    Image(systemName: "film").font(.caption).foregroundColor(ReelTheme.sakuraPink.opacity(0.7))
+                                }
+                            case .empty:
+                                ZStack {
+                                    Color.white.opacity(0.04)
+                                    ProgressView().tint(ReelTheme.sakuraPink).scaleEffect(0.6)
+                                }
+                            @unknown default:
+                                Color.white.opacity(0.06)
+                            }
+                        }
+                        .frame(width: 72, height: 96)
+                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+
+                        LinearGradient(
+                            colors: [Color.clear, Color.black.opacity(0.6)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
 
                         Image(systemName: "play.circle.fill")
                             .font(.title2)
                             .foregroundColor(ReelTheme.sakuraPink)
                     }
+                    .frame(width: 72, height: 96)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
+                            .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
+                    )
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(featured.title)
@@ -126,6 +156,7 @@ public struct LibraryView: View {
                 )
                 .padding(.horizontal)
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -248,7 +279,7 @@ public struct LibraryView: View {
             case .updated(let d, let e):
                 syncStatus = "Updated: \(d) series, \(e) episodes"
             case .notModified:
-                syncStatus = "Up to date (304)"
+                syncStatus = "Up to date"
             case .failed(let err):
                 syncStatus = "Feed: \(err)"
             }

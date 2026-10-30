@@ -2,6 +2,7 @@ import SwiftUI
 import ReelCore
 import ReelEngine
 import ReelPlayer
+import ReelDatabase
 
 /// Minimalist Explore & Drama catalog tab.
 /// Features Apple glassmorphism, Sakura Pink badges, and high-signal typography.
@@ -15,24 +16,26 @@ public struct ExploreView: View {
 
     public init() {}
 
-    private var filteredEpisodes: [Episode] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else { return [] }
-        return allEpisodes.filter { ep in
-            ep.title.lowercased().contains(query) ||
-            (ep.synopsis?.lowercased().contains(query) ?? false) ||
-            "\(ep.episodeNumber)".contains(query)
-        }
-    }
-
     public var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     searchBar
-
                     if !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        searchResultsSection
+                        ExploreSearchResultsView(
+                            searchText: searchText,
+                            allEpisodes: allEpisodes,
+                            selectedDrama: selectedDrama,
+                            onSelectDrama: { switchToDrama($0) },
+                            onSelectEpisode: { ep in
+                                PlayerPoolCoordinator.shared.loadEpisodes(
+                                    allEpisodes,
+                                    dramaTitle: selectedDrama.title,
+                                    startingAt: max(0, ep.episodeNumber - 1)
+                                )
+                                AppNavigationCoordinator.shared.switchToFeed()
+                            }
+                        )
                     } else {
                         featuredHeroCard
                         allDramasShelf
@@ -89,103 +92,77 @@ public struct ExploreView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Search Results
-    private var searchResultsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Episodes (\(filteredEpisodes.count))")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(ReelTheme.textPrimary)
-                .padding(.horizontal)
-
-            if filteredEpisodes.isEmpty {
-                Text("No matching episodes found")
-                    .font(.caption)
-                    .foregroundColor(ReelTheme.textSecondary)
-                    .padding(.horizontal)
-            } else {
-                ForEach(filteredEpisodes) { ep in
-                    Button(action: {
-                        PlayerPoolCoordinator.shared.loadEpisodes(allEpisodes, startingAt: ep.episodeNumber - 1)
-                    }) {
-                        HStack(spacing: 12) {
-                            Text("\(ep.episodeNumber)")
-                                .font(.headline)
-                                .fontWeight(.bold)
-                                .foregroundColor(ReelTheme.sakuraPink)
-                                .frame(width: 32)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(ep.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(ReelTheme.textPrimary)
-
-                                if let synopsis = ep.synopsis {
-                                    Text(synopsis)
-                                        .font(.caption2)
-                                        .foregroundColor(ReelTheme.textSecondary)
-                                        .lineLimit(1)
-                                }
-                            }
-
-                            Spacer()
-
-                            Text(ep.formattedDuration)
-                                .font(.caption2)
-                                .foregroundColor(ReelTheme.textTertiary)
-                        }
-                        .padding(12)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
-                                .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
-                        )
-                        .padding(.horizontal)
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Featured Hero Card
     private var featuredHeroCard: some View {
-        ZStack(alignment: .bottomLeading) {
-            RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
-                .fill(LinearGradient(
-                    colors: [ReelTheme.sakuraPink.opacity(0.25), ReelTheme.cardBackground],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
-                .frame(height: 200)
-                .overlay(
-                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
-                        .strokeBorder(ReelTheme.sakuraPink.opacity(0.3), lineWidth: 0.8)
+        Button(action: { switchToDrama(featured) }) {
+            ZStack(alignment: .bottomLeading) {
+                if let bannerURL = featured.bannerURL ?? featured.coverURL {
+                    AsyncImage(url: bannerURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().aspectRatio(contentMode: .fill).frame(height: 200).clipped()
+                        case .failure:
+                            heroFallbackBackground
+                        case .empty:
+                            ZStack { heroFallbackBackground; ProgressView().tint(ReelTheme.sakuraPink) }
+                        @unknown default:
+                            heroFallbackBackground
+                        }
+                    }
+                    .frame(height: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
+                } else {
+                    heroFallbackBackground
+                }
+
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.85)],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
+                .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("FEATURED")
-                    .font(.system(size: 10, weight: .heavy))
-                    .foregroundColor(ReelTheme.sakuraPink)
-                    .tracking(1.2)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text("FEATURED")
+                            .font(.system(size: 10, weight: .heavy))
+                            .foregroundColor(ReelTheme.sakuraPink)
+                            .tracking(1.2)
+                        Spacer()
+                        Image(systemName: "play.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(ReelTheme.sakuraPink)
+                    }
 
-                Text(featured.title)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(ReelTheme.textPrimary)
+                    Text(featured.title)
+                        .font(.title3).fontWeight(.bold).foregroundColor(ReelTheme.textPrimary)
 
-                Text(featured.genresDisplay)
-                    .font(.caption2)
-                    .foregroundColor(ReelTheme.textSecondary)
+                    Text(featured.genresDisplay)
+                        .font(.caption2).foregroundColor(ReelTheme.textSecondary)
 
-                Text("\(featured.totalEpisodes) Episodes • Unlocked")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(ReelTheme.sakuraMist)
+                    Text("\(featured.totalEpisodes) Episodes • Tap to Play")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(ReelTheme.sakuraMist)
+                }
+                .padding()
             }
-            .padding()
+            .overlay(
+                RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
+                    .strokeBorder(ReelTheme.sakuraPink.opacity(0.3), lineWidth: 0.8)
+            )
+            .padding(.horizontal)
         }
-        .padding(.horizontal)
+        .buttonStyle(.plain)
+    }
+
+    private var heroFallbackBackground: some View {
+        RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
+            .fill(LinearGradient(
+                colors: [ReelTheme.sakuraPink.opacity(0.25), ReelTheme.cardBackground],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ))
+            .frame(height: 200)
     }
 
     // MARK: - All Dramas Shelf
@@ -203,9 +180,28 @@ public struct ExploreView: View {
                         Button(action: { switchToDrama(drama) }) {
                             VStack(alignment: .leading, spacing: 6) {
                                 ZStack(alignment: .bottomLeading) {
-                                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
-                                        .fill(Color.white.opacity(0.08))
-                                        .frame(width: 125, height: 175)
+                                    AsyncImage(url: drama.coverURL) { phase in
+                                        switch phase {
+                                        case .success(let image):
+                                            image.resizable().aspectRatio(contentMode: .fill)
+                                        case .failure:
+                                            ZStack {
+                                                Color.white.opacity(0.06)
+                                                Image(systemName: "film")
+                                                    .font(.caption)
+                                                    .foregroundColor(ReelTheme.sakuraPink.opacity(0.7))
+                                            }
+                                        case .empty:
+                                            ZStack {
+                                                Color.white.opacity(0.04)
+                                                ProgressView().tint(ReelTheme.sakuraPink).scaleEffect(0.6)
+                                            }
+                                        @unknown default:
+                                            Color.white.opacity(0.06)
+                                        }
+                                    }
+                                    .frame(width: 125, height: 175)
+                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
 
                                     LinearGradient(
                                         colors: [Color.clear, Color.black.opacity(0.8)],
@@ -223,6 +219,11 @@ public struct ExploreView: View {
                                         .clipShape(Capsule())
                                         .padding(8)
                                 }
+                                .frame(width: 125, height: 175)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall)
+                                        .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
+                                )
 
                                 Text(drama.title)
                                     .font(.caption)
@@ -239,6 +240,7 @@ public struct ExploreView: View {
                                     .frame(width: 125, alignment: .leading)
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal)
@@ -251,7 +253,8 @@ public struct ExploreView: View {
         Task {
             if let episodes = try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: drama.id), !episodes.isEmpty {
                 self.allEpisodes = episodes
-                PlayerPoolCoordinator.shared.loadEpisodes(episodes, startingAt: 0)
+                PlayerPoolCoordinator.shared.loadEpisodes(episodes, dramaTitle: drama.title, startingAt: 0)
+                AppNavigationCoordinator.shared.switchToFeed()
             }
         }
     }
