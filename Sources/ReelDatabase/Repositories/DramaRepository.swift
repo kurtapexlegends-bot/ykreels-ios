@@ -6,7 +6,7 @@ import ReelCore
 public final class DramaRepository: Sendable {
     public static let shared = DramaRepository(database: .shared)
 
-    private let database: AppDatabase
+    internal let database: AppDatabase
 
     public init(database: AppDatabase) {
         self.database = database
@@ -236,7 +236,7 @@ public final class DramaRepository: Sendable {
 
     // MARK: - Private Helpers
 
-    private func executeUpsertDrama(_ db: Database, drama: Drama) throws {
+    internal func executeUpsertDrama(_ db: Database, drama: Drama) throws {
         try db.execute(
             sql: """
             INSERT INTO dramas (id, title, synopsis, cover_url, banner_url, genres, tags, total_episodes, release_year, "cast", is_bookmarked, created_at, updated_at)
@@ -272,7 +272,7 @@ public final class DramaRepository: Sendable {
         )
     }
 
-    private func executeUpsertEpisode(_ db: Database, episode: Episode) throws {
+    internal func executeUpsertEpisode(_ db: Database, episode: Episode) throws {
         try db.execute(
             sql: """
             INSERT INTO episodes (id, drama_id, episode_number, title, synopsis, duration_seconds, thumbnail_url, stream_sources_json, subtitles_json, is_unlocked, download_state_json)

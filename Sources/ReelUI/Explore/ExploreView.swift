@@ -9,15 +9,9 @@ import ReelPlayer
 public struct ExploreView: View {
     @State private var searchText: String = ""
     @State private var selectedDrama: Drama = WrongMatchRightCrushData.drama
-    private let allDramas: [Drama] = [
-        WrongMatchRightCrushData.drama,
-        ExpandedCuratedDramasData.finalBossDrama,
-        ExpandedCuratedDramasData.ceoContractWifeDrama,
-        ExpandedCuratedDramasData.cursedAlphaDrama,
-        ExpandedCuratedDramasData.fashionQueenDrama
-    ]
+    @State private var allDramas: [Drama] = [WrongMatchRightCrushData.drama]
+    @State private var allEpisodes: [Episode] = WrongMatchRightCrushData.episodes
     private var featured: Drama { selectedDrama }
-    private let allEpisodes = WrongMatchRightCrushData.episodes
 
     public init() {}
 
@@ -53,6 +47,17 @@ public struct ExploreView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .task {
+                await loadCatalog()
+                await CuratedDramaCatalog.shared.syncFromRemote()
+            }
+            .refreshable {
+                await CuratedDramaCatalog.shared.syncFromRemote(force: true)
+                await loadCatalog()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .dramaCatalogDidUpdate)) { _ in
+                Task { await loadCatalog() }
+            }
         }
     }
 
@@ -245,8 +250,21 @@ public struct ExploreView: View {
         selectedDrama = drama
         Task {
             if let episodes = try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: drama.id), !episodes.isEmpty {
+                self.allEpisodes = episodes
                 PlayerPoolCoordinator.shared.loadEpisodes(episodes, startingAt: 0)
             }
+        }
+    }
+
+    private func loadCatalog() async {
+        if let dramas = try? await CuratedDramaCatalog.shared.getAllDramas(), !dramas.isEmpty {
+            self.allDramas = dramas
+            if !dramas.contains(where: { $0.id == selectedDrama.id }), let first = dramas.first {
+                self.selectedDrama = first
+            }
+        }
+        if let episodes = try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: selectedDrama.id), !episodes.isEmpty {
+            self.allEpisodes = episodes
         }
     }
 

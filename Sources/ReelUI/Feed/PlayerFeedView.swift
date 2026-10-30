@@ -283,26 +283,31 @@ public struct PlayerFeedView: View {
     }
 
     private func loadInitialEpisodes() {
-        self.episodes = WrongMatchRightCrushData.episodes
-        DramaRepository.shared.seedCuratedDramasIfNeeded(
-            drama: WrongMatchRightCrushData.drama,
-            episodes: episodes
-        )
-        coordinator.onProgressUpdate = { episode, playhead, duration in
-            Task { @MainActor in
-                let progress = PlaybackProgress(
-                    dramaId: episode.dramaId,
-                    lastEpisodeId: episode.id,
-                    lastEpisodeNumber: episode.episodeNumber,
-                    playheadSeconds: playhead,
-                    durationSeconds: duration,
-                    isCompleted: duration > 0 && playhead >= (duration - 1.0)
-                )
-                try? DramaRepository.shared.upsertPlaybackProgress(progress)
+        Task { @MainActor in
+            let initialDrama = (try? await CuratedDramaCatalog.shared.getFeaturedDrama()) ?? WrongMatchRightCrushData.drama
+            let eps = (try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: initialDrama.id)) ?? WrongMatchRightCrushData.episodes
+            self.episodes = eps
+
+            coordinator.onProgressUpdate = { episode, playhead, duration in
+                Task { @MainActor in
+                    let progress = PlaybackProgress(
+                        dramaId: episode.dramaId,
+                        lastEpisodeId: episode.id,
+                        lastEpisodeNumber: episode.episodeNumber,
+                        playheadSeconds: playhead,
+                        durationSeconds: duration,
+                        isCompleted: duration > 0 && playhead >= (duration - 1.0)
+                    )
+                    try? DramaRepository.shared.upsertPlaybackProgress(progress)
+                }
+            }
+            coordinator.loadEpisodes(eps, startingAt: 0)
+            scheduleAutoHide()
+
+            Task(priority: .utility) {
+                await CuratedDramaCatalog.shared.syncFromRemote()
             }
         }
-        coordinator.loadEpisodes(episodes, startingAt: 0)
-        scheduleAutoHide()
     }
 
     // MARK: - Episode Drawer Sheet

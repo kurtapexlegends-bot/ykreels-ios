@@ -12,6 +12,10 @@ public struct LibraryView: View {
     @State private var showingClearCacheAlert: Bool = false
     @State private var cacheUsedMB: Double = 0.0
     @State private var playbackProgress: PlaybackProgress?
+    @State private var dramaCount: Int = 5
+    @State private var episodeCount: Int = 133
+    @State private var syncStatus: String = "Live Feed Connected"
+    @State private var isSyncing: Bool = false
     private let cacheLimitMB: Double = 250.0
     private let featured = WrongMatchRightCrushData.drama
     private let episodes = WrongMatchRightCrushData.episodes
@@ -24,6 +28,7 @@ public struct LibraryView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     continueWatchingSection
                     storageCacheSection
+                    remoteFeedSection
                 }
                 .padding(.vertical, 8)
             }
@@ -35,6 +40,10 @@ public struct LibraryView: View {
             .onAppear {
                 updateCacheSize()
                 loadPlaybackProgress()
+                reloadCatalogCounts()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .dramaCatalogDidUpdate)) { _ in
+                reloadCatalogCounts()
             }
             .alert("Clear Video Cache?", isPresented: $showingClearCacheAlert) {
                 Button("Cancel", role: .cancel) {}
@@ -167,6 +176,84 @@ public struct LibraryView: View {
                     .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
             )
             .padding(.horizontal)
+        }
+    }
+
+    // MARK: - Remote Drama Catalog Feed
+    private var remoteFeedSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Drama Catalog Feed")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(ReelTheme.textPrimary)
+                .padding(.horizontal)
+
+            VStack(spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(dramaCount) Series • \(episodeCount) Episodes")
+                            .font(.subheadline)
+                            .foregroundColor(ReelTheme.textPrimary)
+
+                        Text(syncStatus)
+                            .font(.caption2)
+                            .foregroundColor(ReelTheme.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Button(action: { triggerManualSync() }) {
+                        if isSyncing {
+                            ProgressView()
+                                .tint(ReelTheme.sakuraPink)
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("Check Updates")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(ReelTheme.sakuraPink)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Capsule())
+                                .overlay(Capsule().strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5))
+                        }
+                    }
+                    .disabled(isSyncing)
+                }
+            }
+            .padding(14)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium))
+            .overlay(
+                RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium)
+                    .strokeBorder(ReelTheme.glassBorder, lineWidth: 0.5)
+            )
+            .padding(.horizontal)
+        }
+    }
+
+    private func reloadCatalogCounts() {
+        dramaCount = (try? DramaRepository.shared.fetchTotalDramaCount()) ?? 5
+        episodeCount = (try? DramaRepository.shared.fetchTotalEpisodeCount()) ?? 133
+    }
+
+    private func triggerManualSync() {
+        guard !isSyncing else { return }
+        isSyncing = true
+        syncStatus = "Checking remote feed..."
+        Task {
+            let res = await CuratedDramaCatalog.shared.syncFromRemote(force: true)
+            switch res {
+            case .updated(let d, let e):
+                syncStatus = "Updated: \(d) series, \(e) episodes"
+            case .notModified:
+                syncStatus = "Up to date (304)"
+            case .failed(let err):
+                syncStatus = "Feed: \(err)"
+            }
+            reloadCatalogCounts()
+            isSyncing = false
         }
     }
 }
