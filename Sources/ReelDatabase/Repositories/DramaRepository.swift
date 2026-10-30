@@ -77,7 +77,7 @@ public final class DramaRepository: Sendable {
                 db,
                 sql: """
                 SELECT * FROM dramas
-                WHERE title LIKE ? OR synopsis LIKE ? OR cast LIKE ? OR genres LIKE ?
+                WHERE title LIKE ? OR synopsis LIKE ? OR "cast" LIKE ? OR genres LIKE ?
                 ORDER BY created_at DESC
                 """,
                 arguments: [pattern, pattern, pattern, pattern]
@@ -236,7 +236,7 @@ public final class DramaRepository: Sendable {
     private func executeUpsertDrama(_ db: Database, drama: Drama) throws {
         try db.execute(
             sql: """
-            INSERT INTO dramas (id, title, synopsis, cover_url, banner_url, genres, tags, total_episodes, release_year, cast, is_bookmarked, created_at, updated_at)
+            INSERT INTO dramas (id, title, synopsis, cover_url, banner_url, genres, tags, total_episodes, release_year, "cast", is_bookmarked, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
@@ -247,7 +247,7 @@ public final class DramaRepository: Sendable {
                 tags = excluded.tags,
                 total_episodes = excluded.total_episodes,
                 release_year = excluded.release_year,
-                cast = excluded.cast,
+                "cast" = excluded."cast",
                 is_bookmarked = excluded.is_bookmarked,
                 updated_at = excluded.updated_at
             """,
