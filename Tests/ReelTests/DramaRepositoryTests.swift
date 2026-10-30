@@ -132,9 +132,12 @@ final class DramaRepositoryTests: XCTestCase {
         try repository.upsertPlaybackProgress(progress)
 
         let fetchedProgress = try repository.fetchPlaybackProgress(dramaId: "drama-progress")
-        XCTAssertNotNil(fetchedProgress)
-        XCTAssertEqual(fetchedProgress?.playheadSeconds, 45.0)
-        XCTAssertEqual(fetchedProgress?.progressRatio, 0.45, accuracy: 0.001)
+        guard let fetched = fetchedProgress else {
+            XCTFail("Expected fetched progress to not be nil")
+            return
+        }
+        XCTAssertEqual(fetched.playheadSeconds, 45.0)
+        XCTAssertEqual(fetched.progressRatio, 0.45, accuracy: 0.001)
 
         let history = WatchHistory(
             id: "hist-1",
