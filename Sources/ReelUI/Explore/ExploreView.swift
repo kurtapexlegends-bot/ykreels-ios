@@ -16,6 +16,7 @@ public struct ExploreView: View {
         ExpandedCuratedDramasData.cursedAlphaDrama,
         ExpandedCuratedDramasData.fashionQueenDrama
     ]
+    private var featured: Drama { selectedDrama }
     private let allEpisodes = WrongMatchRightCrushData.episodes
 
     public init() {}
