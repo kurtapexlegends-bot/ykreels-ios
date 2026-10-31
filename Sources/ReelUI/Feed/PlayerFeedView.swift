@@ -110,22 +110,21 @@ public struct PlayerFeedView: View {
     // MARK: - Buffering Poster Layer (Eliminates Black Freeze)
     private func bufferingPosterLayer(size: CGSize) -> some View {
         ZStack {
-            let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL ?? WrongMatchRightCrushData.drama.coverURL
-            if let cover = coverURL {
-                AsyncImage(url: cover) { phase in
-                    if let img = phase.image {
-                        img.resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .clipped()
-                            .blur(radius: 8)
-                    } else {
-                        posterFallbackGradient
-                    }
-                }
+            let dramaId = coordinator.currentEpisode?.dramaId ?? WrongMatchRightCrushData.drama.id
+            #if os(iOS)
+            if let uiImage = UIImage(named: dramaId) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+                    .blur(radius: 8)
             } else {
-                posterFallbackGradient
+                remoteBufferingImage(size: size)
             }
+            #else
+            remoteBufferingImage(size: size)
+            #endif
 
             VStack(spacing: 10) {
                 ProgressView()
@@ -144,6 +143,27 @@ public struct PlayerFeedView: View {
         }
         .frame(width: size.width, height: size.height)
         .transition(.opacity)
+    }
+
+    private func remoteBufferingImage(size: CGSize) -> some View {
+        let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL ?? WrongMatchRightCrushData.drama.coverURL
+        return Group {
+            if let cover = coverURL {
+                AsyncImage(url: cover) { phase in
+                    if let img = phase.image {
+                        img.resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: size.width, height: size.height)
+                            .clipped()
+                            .blur(radius: 8)
+                    } else {
+                        posterFallbackGradient
+                    }
+                }
+            } else {
+                posterFallbackGradient
+            }
+        }
     }
 
     private var posterFallbackGradient: some View {

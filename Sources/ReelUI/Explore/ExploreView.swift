@@ -98,24 +98,9 @@ public struct ExploreView: View {
     private var featuredHeroCard: some View {
         Button(action: { switchToDrama(featured) }) {
             ZStack(alignment: .bottomLeading) {
-                if let bannerURL = featured.bannerURL ?? featured.coverURL {
-                    Color.clear
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 280)
-                        .overlay(
-                            AsyncImage(url: bannerURL) { phase in
-                                if let img = phase.image {
-                                    img.resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                } else {
-                                    heroFallbackBackground
-                                }
-                            }
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge))
-                } else {
-                    heroFallbackBackground
-                }
+                DramaCoverImage(drama: featured, cornerRadius: ReelTheme.cornerRadiusLarge)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 280)
 
                 LinearGradient(
                     colors: [Color.clear, Color.black.opacity(0.3), Color.black.opacity(0.92)],
@@ -183,17 +168,6 @@ public struct ExploreView: View {
         .buttonStyle(.plain)
     }
 
-    private var heroFallbackBackground: some View {
-        RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusLarge)
-            .fill(LinearGradient(
-                colors: [Color(white: 0.16), Color(white: 0.08)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            ))
-            .frame(maxWidth: .infinity)
-            .frame(height: 280)
-    }
-
     // MARK: - All Dramas Shelf
     private var allDramasShelf: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -218,15 +192,8 @@ public struct ExploreView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 ZStack(alignment: .bottomLeading) {
                                     // Poster Layer
-                                    AsyncImage(url: drama.coverURL) { phase in
-                                        if let img = phase.image {
-                                            img.resizable().aspectRatio(contentMode: .fill)
-                                        } else {
-                                            posterFallback(for: drama)
-                                        }
-                                    }
-                                    .frame(width: 160, height: 230)
-                                    .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusMedium))
+                                    DramaCoverImage(drama: drama, cornerRadius: ReelTheme.cornerRadiusMedium)
+                                        .frame(width: 160, height: 230)
 
                                     // Contrast Vignette at bottom
                                     LinearGradient(
@@ -278,28 +245,6 @@ public struct ExploreView: View {
         }
     }
 
-    private func posterFallback(for drama: Drama) -> some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color(white: 0.18), Color(white: 0.09)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            VStack(spacing: 8) {
-                Image(systemName: "film.stack")
-                    .font(.system(size: 32))
-                    .foregroundColor(ReelTheme.sakuraPink.opacity(0.8))
-
-                Text(drama.title)
-                    .font(.caption2.bold())
-                    .foregroundColor(ReelTheme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-                    .lineLimit(2)
-            }
-        }
-        .frame(width: 160, height: 230)
-    }
 
     private func switchToDrama(_ drama: Drama) {
         selectedDrama = drama

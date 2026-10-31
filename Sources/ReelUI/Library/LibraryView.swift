@@ -102,18 +102,8 @@ public struct LibraryView: View {
             }) {
                 HStack(spacing: 12) {
                     ZStack {
-                        AsyncImage(url: activeDrama.coverURL) { phase in
-                            if let img = phase.image {
-                                img.resizable().aspectRatio(contentMode: .fill)
-                            } else {
-                                ZStack {
-                                    LinearGradient(colors: [Color(white: 0.18), Color(white: 0.09)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    Image(systemName: "film.stack").font(.caption).foregroundColor(ReelTheme.sakuraPink.opacity(0.8))
-                                }
-                            }
-                        }
-                        .frame(width: 72, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+                        DramaCoverImage(drama: activeDrama, cornerRadius: ReelTheme.cornerRadiusSmall)
+                            .frame(width: 72, height: 96)
 
                         LinearGradient(
                             colors: [Color.clear, Color.black.opacity(0.6)],

@@ -51,15 +51,8 @@ public struct ExploreSearchResultsView: View {
                     ForEach(matchedDramas) { drama in
                         Button(action: { onSelectDrama(drama) }) {
                             HStack(spacing: 12) {
-                                AsyncImage(url: drama.coverURL) { phase in
-                                    if let img = phase.image {
-                                        img.resizable().aspectRatio(contentMode: .fill)
-                                    } else {
-                                        Color.white.opacity(0.08)
-                                    }
-                                }
-                                .frame(width: 48, height: 64)
-                                .clipShape(RoundedRectangle(cornerRadius: ReelTheme.cornerRadiusSmall))
+                                DramaCoverImage(drama: drama, cornerRadius: ReelTheme.cornerRadiusSmall)
+                                    .frame(width: 48, height: 64)
 
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(drama.title)

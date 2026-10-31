@@ -3,37 +3,37 @@ import XCTest
 @testable import ReelEngine
 
 final class CuratedCatalogTests: XCTestCase {
-    func testWrongMatchRightCrushMetadata() async throws {
+    func testFeaturedDramaMetadata() async throws {
         let catalog = CuratedDramaCatalog.shared
         let drama = try await catalog.getFeaturedDrama()
 
-        XCTAssertEqual(drama.id, "drama-wrong-match-right-crush")
-        XCTAssertEqual(drama.title, "Wrong Match, Right Crush")
-        XCTAssertEqual(drama.totalEpisodes, 25)
+        XCTAssertEqual(drama.id, "taming-my-bullies")
+        XCTAssertEqual(drama.title, "Taming My Bullies")
+        XCTAssertEqual(drama.totalEpisodes, 7)
         XCTAssertTrue(drama.genres.contains("Romance"))
-        XCTAssertTrue(drama.cast.contains(where: { $0.contains("Nora") }))
-        XCTAssertTrue(drama.cast.contains(where: { $0.contains("Theo") }))
+        XCTAssertTrue(drama.cast.contains(where: { $0.contains("Emma") }))
+        XCTAssertTrue(drama.cast.contains(where: { $0.contains("Rowan") }))
     }
 
-    func testWrongMatchRightCrushEpisodesCountAndIntegrity() async throws {
+    func testFeaturedDramaEpisodesCountAndIntegrity() async throws {
         let catalog = CuratedDramaCatalog.shared
-        let episodes = try await catalog.getEpisodes(dramaId: "drama-wrong-match-right-crush")
+        let episodes = try await catalog.getEpisodes(dramaId: "taming-my-bullies")
 
-        XCTAssertEqual(episodes.count, 25, "Must contain all 25 episodes")
+        XCTAssertEqual(episodes.count, 7, "Must contain all 7 episodes")
         
         // Check first episode
         let ep1 = episodes.first(where: { $0.episodeNumber == 1 })
         XCTAssertNotNil(ep1)
-        XCTAssertEqual(ep1?.title, "The Wrong Number")
+        XCTAssertEqual(ep1?.title, "Emma Meets Rowan")
         XCTAssertTrue(ep1?.isUnlocked == true, "Every episode must be 100% free and unlocked")
         XCTAssertNotNil(ep1?.primaryStreamURL)
 
         // Check finale episode
-        let ep25 = episodes.first(where: { $0.episodeNumber == 25 })
-        XCTAssertNotNil(ep25)
-        XCTAssertEqual(ep25?.title, "Right Match, Right Here")
-        XCTAssertEqual(ep25?.episodeNumber, 25)
-        XCTAssertTrue(ep25?.isUnlocked == true)
+        let ep7 = episodes.first(where: { $0.episodeNumber == 7 })
+        XCTAssertNotNil(ep7)
+        XCTAssertEqual(ep7?.title, "High School Queen Feature")
+        XCTAssertEqual(ep7?.episodeNumber, 7)
+        XCTAssertTrue(ep7?.isUnlocked == true)
     }
 
     func testEpisodeFormatting() {
@@ -68,29 +68,21 @@ final class CuratedCatalogTests: XCTestCase {
         XCTAssertEqual(ReelTheme.verticalReelAspectRatio, 9.0 / 16.0)
     }
 
-    func testAllExpandedDramasCountAndIntegrity() async throws {
+    func testAllCuratedDramasCountAndIntegrity() async throws {
         let catalog = CuratedDramaCatalog.shared
         let allDramas = try await catalog.getAllDramas()
 
-        XCTAssertEqual(allDramas.count, 5, "Must contain all 5 curated drama series")
-
-        let expectedCounts = [
-            "drama-wrong-match-right-crush": 25,
-            "drama-final-boss": 30,
-            "drama-ceo-contract-wife": 28,
-            "drama-cursed-alpha": 26,
-            "drama-fashion-queen": 24
-        ]
+        XCTAssertEqual(allDramas.count, 12, "Must contain all 12 curated English drama series")
 
         var grandTotalEpisodes = 0
         for drama in allDramas {
             let episodes = try await catalog.getEpisodes(dramaId: drama.id)
-            let expected = expectedCounts[drama.id]
-            XCTAssertEqual(episodes.count, expected, "Mismatch for \(drama.title)")
+            XCTAssertGreaterThanOrEqual(episodes.count, 1, "Drama \(drama.title) must have at least 1 episode")
             XCTAssertTrue(episodes.allSatisfy { $0.isUnlocked }, "All episodes in \(drama.title) must be 100% unlocked")
+            XCTAssertTrue(episodes.allSatisfy { $0.primaryStreamURL != nil }, "All episodes must have a valid stream source")
             grandTotalEpisodes += episodes.count
         }
 
-        XCTAssertEqual(grandTotalEpisodes, 133, "Grand total across all 5 series must be 133 episodes")
+        XCTAssertEqual(grandTotalEpisodes, 38, "Total across all 12 series must match curated episode count")
     }
 }

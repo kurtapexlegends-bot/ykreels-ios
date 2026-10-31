@@ -20,31 +20,20 @@ public final class CuratedDramaCatalog: DramaCatalogService, @unchecked Sendable
     private let fallbackEpisodesMap: [String: [Episode]]
 
     public init() {
-        self.fallbackDramas = [
-            WrongMatchRightCrushData.drama,
-            ExpandedCuratedDramasData.finalBossDrama,
-            ExpandedCuratedDramasData.ceoContractWifeDrama,
-            ExpandedCuratedDramasData.cursedAlphaDrama,
-            ExpandedCuratedDramasData.fashionQueenDrama
-        ]
-        self.fallbackEpisodesMap = [
-            WrongMatchRightCrushData.dramaId: WrongMatchRightCrushData.episodes,
-            ExpandedCuratedDramasData.finalBossDrama.id: ExpandedCuratedDramasData.finalBossEpisodes,
-            ExpandedCuratedDramasData.ceoContractWifeDrama.id: ExpandedCuratedDramasData.ceoContractWifeEpisodes,
-            ExpandedCuratedDramasData.cursedAlphaDrama.id: ExpandedCuratedDramasData.cursedAlphaEpisodes,
-            ExpandedCuratedDramasData.fashionQueenDrama.id: ExpandedCuratedDramasData.fashionQueenEpisodes
-        ]
+        self.fallbackDramas = CuratedCatalogData.allDramas
+        var map: [String: [Episode]] = [:]
+        for item in CuratedCatalogData.allCatalogItems {
+            map[item.drama.id] = item.episodes
+        }
+        self.fallbackEpisodesMap = map
 
-        // Seed initial items into SQLite if database is empty
+        // Seed initial items into SQLite if database is empty or outdated
         DramaRepository.shared.seedCatalogItemsIfNeeded(defaultCatalogItems)
     }
 
     /// Bundled starter items for offline readiness.
     public var defaultCatalogItems: [DramaCatalogItem] {
-        fallbackDramas.compactMap { drama in
-            guard let eps = fallbackEpisodesMap[drama.id] else { return nil }
-            return DramaCatalogItem(drama: drama, episodes: eps)
-        }
+        CuratedCatalogData.allCatalogItems
     }
 
     public func getFeaturedDrama() async throws -> Drama {

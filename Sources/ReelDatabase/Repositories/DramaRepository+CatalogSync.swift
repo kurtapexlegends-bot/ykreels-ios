@@ -28,11 +28,18 @@ extension DramaRepository {
         }
     }
 
-    /// Seeds curated catalog items into the local SQLite database if the dramas table is currently empty.
+    /// Seeds curated catalog items into the local SQLite database if empty or containing stale placeholder seeds.
     public func seedCatalogItemsIfNeeded(_ items: [DramaCatalogItem]) {
         do {
-            let count = try fetchTotalDramaCount()
-            if count == 0 {
+            let hasFreshCatalog = try database.reader.read { db in
+                try (Int.fetchOne(db, sql: "SELECT COUNT(*) FROM dramas WHERE id = 'taming-my-bullies'") ?? 0) > 0
+            }
+            if !hasFreshCatalog {
+                // Database is either empty or contains outdated placeholder seeds; wipe old and seed fresh
+                try database.writer.write { db in
+                    try db.execute(sql: "DELETE FROM episodes")
+                    try db.execute(sql: "DELETE FROM dramas")
+                }
                 try upsertCatalogItems(items)
             }
         } catch {
