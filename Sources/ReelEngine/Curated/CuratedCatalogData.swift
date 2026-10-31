@@ -77,14 +77,14 @@ public enum CuratedCatalogData {
     public static let janitor_rise_of_primeDrama = Drama(
         id: "janitor-rise-of-prime",
         title: "The Janitor: Rise of the Prime",
-        synopsis: "Ethan, the supreme head of the Prime Financial Syndicate, poses as a humble building janitor to root out corruption and teach his materialistic ex-fiancée an unforgettable lesson.",
+        synopsis: "Ethan, the supreme head of the Prime Financial Syndicate, poses as a humble building janitor to root out corruption and teach his materialistic ex-fiancee an unforgettable lesson.",
         coverURL: URL(string: "https://raw.githubusercontent.com/kurtapexlegends-bot/ykreels-ios/main/covers/janitor-rise-of-prime.jpg"),
         bannerURL: URL(string: "https://raw.githubusercontent.com/kurtapexlegends-bot/ykreels-ios/main/covers/janitor-rise-of-prime.jpg"),
         genres: ["Hidden Billionaire", "Revenge", "Action"],
         tags: ["Undercover", "Tycoon", "Payback"],
         totalEpisodes: 4,
         releaseYear: 2024,
-        cast: ["Ethan (The Prime / Janitor)", "Sarah (Ex-Fianc\u00e9e)", "Director Vance"],
+        cast: ["Ethan (The Prime / Janitor)", "Sarah (Ex-Fiancee)", "Director Vance"],
         isBookmarked: false
     )
 

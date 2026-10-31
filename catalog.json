@@ -363,7 +363,7 @@
       "drama": {
         "id": "janitor-rise-of-prime",
         "title": "The Janitor: Rise of the Prime",
-        "synopsis": "Ethan, the supreme head of the Prime Financial Syndicate, poses as a humble building janitor to root out corruption and teach his materialistic ex-fiancée an unforgettable lesson.",
+        "synopsis": "Ethan, the supreme head of the Prime Financial Syndicate, poses as a humble building janitor to root out corruption and teach his materialistic ex-fiancee an unforgettable lesson.",
         "coverURL": "https://raw.githubusercontent.com/kurtapexlegends-bot/ykreels-ios/main/covers/janitor-rise-of-prime.jpg",
         "bannerURL": "https://raw.githubusercontent.com/kurtapexlegends-bot/ykreels-ios/main/covers/janitor-rise-of-prime.jpg",
         "genres": [
@@ -380,7 +380,7 @@
         "releaseYear": 2024,
         "cast": [
           "Ethan (The Prime / Janitor)",
-          "Sarah (Ex-Fiancée)",
+          "Sarah (Ex-Fiancee)",
           "Director Vance"
         ],
         "isBookmarked": false,
