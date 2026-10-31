@@ -134,4 +134,18 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.isBuffering)
         XCTAssertTrue(coordinator.hasRenderedFirstFrame)
     }
+
+    func testAdjacentEpisodeNavigationFlags() {
+        coordinator.loadEpisodes(sampleEpisodes, startingAt: 0)
+        XCTAssertFalse(coordinator.hasPreviousEpisode)
+        XCTAssertTrue(coordinator.hasNextEpisode)
+        XCTAssertNil(coordinator.previousEpisode)
+        XCTAssertEqual(coordinator.nextEpisode?.episodeNumber, 2)
+        XCTAssertEqual(coordinator.currentEpisodeIndex, 0)
+
+        coordinator.advanceToNextEpisode()
+        XCTAssertTrue(coordinator.hasPreviousEpisode)
+        XCTAssertEqual(coordinator.previousEpisode?.episodeNumber, 1)
+        XCTAssertEqual(coordinator.currentEpisodeIndex, 1)
+    }
 }

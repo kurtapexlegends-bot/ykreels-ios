@@ -39,7 +39,10 @@ public struct AppRootView: View {
             .ignoresSafeArea()
 
             // Apple Glassmorphic Floating Tab Bar
-            floatingTabBar
+            if navigation.selectedTab != 0 || navigation.isPlayerHUDVisible {
+                floatingTabBar
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
         }
         .ignoresSafeArea()
         .tint(ReelTheme.sakuraPink)

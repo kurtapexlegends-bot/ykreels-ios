@@ -21,6 +21,12 @@ public final class PlayerPoolCoordinator: ObservableObject {
     @Published public private(set) var playbackRate: Float = 1.0
     public var onProgressUpdate: ((Episode, Double, Double) -> Void)?
 
+    public var hasPreviousEpisode: Bool { currentIndex > 0 }
+    public var hasNextEpisode: Bool { currentIndex + 1 < episodes.count }
+    public var nextEpisode: Episode? { hasNextEpisode ? episodes[currentIndex + 1] : nil }
+    public var previousEpisode: Episode? { hasPreviousEpisode ? episodes[currentIndex - 1] : nil }
+    public var currentEpisodeIndex: Int { currentIndex }
+
     private var currentPlayer: AVPlayer?, nextPlayer: AVPlayer?, previousPlayer: AVPlayer?
     private var timeObserverToken: Any?, itemEndObserver: Any?, statusObservation: NSKeyValueObservation?
     private var episodes: [Episode] = [], currentIndex: Int = 0, lastProgressReport: Date = .distantPast
@@ -111,8 +117,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
 
     public func togglePlayPause() {
         guard let player = currentPlayer else { return }
-        isPlaying ? player.pause() : player.play()
-        isPlaying.toggle()
+        isPlaying ? player.pause() : player.play(); isPlaying.toggle()
         if isPlaying && playbackRate != 1.0 { player.rate = playbackRate }
         reportProgress()
     }
@@ -128,9 +133,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
         isPlaying = true; reportProgress()
     }
 
-    public func markFirstFrameRendered() {
-        isBuffering = false; hasRenderedFirstFrame = true
-    }
+    public func markFirstFrameRendered() { isBuffering = false; hasRenderedFirstFrame = true }
 
     public func seek(to seconds: Double) {
         guard let player = currentPlayer else { return }
@@ -146,8 +149,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
 
     private func reportProgress() {
         guard let ep = currentEpisode else { return }
-        lastProgressReport = Date()
-        onProgressUpdate?(ep, currentPlayhead, totalDuration)
+        lastProgressReport = Date(); onProgressUpdate?(ep, currentPlayhead, totalDuration)
     }
 
     private func attachObservers(to player: AVPlayer) {
@@ -181,9 +183,7 @@ public final class PlayerPoolCoordinator: ObservableObject {
         statusObservation?.invalidate(); statusObservation = nil
     }
 
-    private func releasePlayer(_ player: inout AVPlayer?) {
-        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil
-    }
+    private func releasePlayer(_ player: inout AVPlayer?) { player?.pause(); player?.replaceCurrentItem(with: nil); player = nil }
 
     public func cleanupAllPlayers() {
         detachObservers()

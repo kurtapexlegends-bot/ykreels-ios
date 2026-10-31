@@ -7,7 +7,8 @@ import ReelPlayer
 
 /// Ultra-minimalist vertical 9:16 short-drama reel player feed.
 /// Features Apple glassmorphism, Soft Pastel Sakura Pink accents,
-/// compact right-edge action stack, and edge-to-edge full-bleed playback.
+/// interactive vertical swipe paging, auto-hiding immersive HUD,
+/// and edge-to-edge full-bleed playback.
 @MainActor
 public struct PlayerFeedView: View {
     @StateObject private var coordinator = PlayerPoolCoordinator.shared
@@ -18,26 +19,45 @@ public struct PlayerFeedView: View {
     @State private var showPlayPausePulse: Bool = false
     @State private var isHUDVisible: Bool = true
     @State private var autoHideTask: Task<Void, Never>?
+    @State private var dragOffsetY: CGFloat = 0.0
 
     public init() {}
 
     public var body: some View {
         GeometryReader { geometry in
+            let size = geometry.size
             ZStack {
                 ReelTheme.pureBlack
+                    .ignoresSafeArea()
 
-                // MARK: - Video Layer (Edge-to-Edge Full Screen)
-                if let player = coordinator.activePlayer {
-                    ReelPlayerRepresentable(player: player) {
-                        coordinator.markFirstFrameRendered()
-                    }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
+                // MARK: - Previous Episode Peek (During Downward Drag)
+                if dragOffsetY > 0, let prevEp = coordinator.previousEpisode {
+                    adjacentEpisodeCard(episode: prevEp, size: size)
+                        .offset(y: -size.height + dragOffsetY)
                 }
 
-                // MARK: - Immediate Visual Artwork & Buffering Indicator (Zero Black Freeze)
-                if coordinator.isBuffering || !coordinator.hasRenderedFirstFrame {
-                    bufferingPosterLayer(size: geometry.size)
+                // MARK: - Active Video Layer (Edge-to-Edge Full Screen)
+                ZStack {
+                    if let player = coordinator.activePlayer {
+                        ReelPlayerRepresentable(player: player) {
+                            coordinator.markFirstFrameRendered()
+                        }
+                        .frame(width: size.width, height: size.height)
+                        .clipped()
+                    }
+
+                    // 0ms Keyframe Cover & Buffering Indicator (Zero Black Freeze)
+                    if coordinator.isBuffering || !coordinator.hasRenderedFirstFrame {
+                        bufferingPosterLayer(size: size)
+                    }
+                }
+                .frame(width: size.width, height: size.height)
+                .offset(y: dragOffsetY)
+
+                // MARK: - Next Episode Peek (During Upward Drag)
+                if dragOffsetY < 0, let nextEp = coordinator.nextEpisode {
+                    adjacentEpisodeCard(episode: nextEp, size: size)
+                        .offset(y: size.height + dragOffsetY)
                 }
 
                 // MARK: - Glassmorphic HUD Overlays
@@ -76,23 +96,28 @@ public struct PlayerFeedView: View {
                         .animation(ReelTheme.butterSpring, value: showHeartAnimation)
                 }
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+            .frame(width: size.width, height: size.height)
             .contentShape(Rectangle())
-            .onTapGesture {
+            .onTapGesture(count: 2) {
+                triggerDoubleTapLike()
+            }
+            .onTapGesture(count: 1) {
                 handleSingleTap()
             }
-            .simultaneousGesture(
-                TapGesture(count: 2).onEnded {
-                    triggerDoubleTapLike()
-                }
-            )
             .gesture(
-                DragGesture(minimumDistance: 35)
-                    .onEnded { handleVerticalSwipe($0) }
+                DragGesture(minimumDistance: 15)
+                    .onChanged { value in
+                        handleDragChanged(value)
+                    }
+                    .onEnded { value in
+                        handleDragEnded(value, screenHeight: size.height)
+                    }
             )
         }
         .ignoresSafeArea()
         .onAppear {
+            isHUDVisible = true
+            AppNavigationCoordinator.shared.isPlayerHUDVisible = true
             if coordinator.currentEpisodes.isEmpty {
                 loadInitialEpisodes()
             } else {
@@ -107,24 +132,45 @@ public struct PlayerFeedView: View {
         .sheet(isPresented: $showingEpisodeDrawer) { episodeDrawerSheet }
     }
 
+    // MARK: - Adjacent Episode Peek Card
+    private func adjacentEpisodeCard(episode: Episode, size: CGSize) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            ReelTheme.pureBlack
+            episodePoster(dramaId: episode.dramaId, coverURL: episode.thumbnailURL ?? coordinator.currentDramaCoverURL, size: size)
+
+            LinearGradient(
+                colors: [Color.clear, Color.black.opacity(0.8)],
+                startPoint: .center,
+                endPoint: .bottom
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Ep \(episode.episodeNumber)")
+                    .font(.caption.bold())
+                    .foregroundColor(ReelTheme.sakuraPink)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+
+                Text(episode.title)
+                    .font(.subheadline.bold())
+                    .foregroundColor(ReelTheme.textPrimary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 80)
+        }
+        .frame(width: size.width, height: size.height)
+        .clipped()
+    }
+
     // MARK: - Buffering Poster Layer (Eliminates Black Freeze)
     private func bufferingPosterLayer(size: CGSize) -> some View {
         ZStack {
             let dramaId = coordinator.currentEpisode?.dramaId ?? WrongMatchRightCrushData.drama.id
-            #if os(iOS)
-            if let uiImage = UIImage(named: dramaId) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-                    .blur(radius: 8)
-            } else {
-                remoteBufferingImage(size: size)
-            }
-            #else
-            remoteBufferingImage(size: size)
-            #endif
+            let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL ?? WrongMatchRightCrushData.drama.coverURL
+            episodePoster(dramaId: dramaId, coverURL: coverURL, size: size)
 
             VStack(spacing: 10) {
                 ProgressView()
@@ -145,25 +191,24 @@ public struct PlayerFeedView: View {
         .transition(.opacity)
     }
 
-    private func remoteBufferingImage(size: CGSize) -> some View {
-        let coverURL = coordinator.currentEpisode?.thumbnailURL ?? coordinator.currentDramaCoverURL ?? WrongMatchRightCrushData.drama.coverURL
-        return Group {
-            if let cover = coverURL {
+    private func episodePoster(dramaId: String, coverURL: URL?, size: CGSize) -> some View {
+        Group {
+            #if os(iOS)
+            if let uiImage = UIImage(named: dramaId) {
+                Image(uiImage: uiImage).resizable().aspectRatio(contentMode: .fill)
+            } else if let cover = coverURL {
                 AsyncImage(url: cover) { phase in
-                    if let img = phase.image {
-                        img.resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .clipped()
-                            .blur(radius: 8)
-                    } else {
-                        posterFallbackGradient
-                    }
+                    if let img = phase.image { img.resizable().aspectRatio(contentMode: .fill) } else { posterFallbackGradient }
                 }
             } else {
                 posterFallbackGradient
             }
+            #else
+            posterFallbackGradient
+            #endif
         }
+        .frame(width: size.width, height: size.height)
+        .clipped()
     }
 
     private var posterFallbackGradient: some View {
@@ -176,40 +221,88 @@ public struct PlayerFeedView: View {
 
     // MARK: - Gestures & Interactions
     private func handleSingleTap() {
-        coordinator.togglePlayPause()
-        withAnimation(.easeOut(duration: 0.2)) {
-            showPlayPausePulse = true
-            isHUDVisible = true
-        }
-        scheduleAutoHide()
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 600_000_000)
-            withAnimation(.easeIn(duration: 0.25)) {
-                showPlayPausePulse = false
+        if !isHUDVisible {
+            withAnimation(ReelTheme.butterSpring) {
+                isHUDVisible = true
+                AppNavigationCoordinator.shared.isPlayerHUDVisible = true
+            }
+            scheduleAutoHide()
+        } else {
+            coordinator.togglePlayPause()
+            withAnimation(.easeOut(duration: 0.2)) {
+                showPlayPausePulse = true
+            }
+            if coordinator.isPlaying {
+                scheduleAutoHide()
+            } else {
+                autoHideTask?.cancel()
+            }
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                withAnimation(.easeIn(duration: 0.25)) {
+                    showPlayPausePulse = false
+                }
             }
         }
     }
 
-    private func handleVerticalSwipe(_ value: DragGesture.Value) {
+    private func handleDragChanged(_ value: DragGesture.Value) {
         let vertical = value.translation.height
         let horizontal = value.translation.width
         guard abs(vertical) > abs(horizontal) else { return }
 
-        if vertical < -50 {
-            withAnimation(ReelTheme.butterSpring) { coordinator.advanceToNextEpisode() }
-            scheduleAutoHide()
-        } else if vertical > 50 {
-            withAnimation(ReelTheme.butterSpring) { coordinator.returnToPreviousEpisode() }
-            scheduleAutoHide()
+        let hasPrev = coordinator.hasPreviousEpisode
+        let hasNext = coordinator.hasNextEpisode
+
+        if (vertical > 0 && !hasPrev) || (vertical < 0 && !hasNext) {
+            dragOffsetY = vertical * 0.25
+        } else {
+            dragOffsetY = vertical
+        }
+    }
+
+    private func handleDragEnded(_ value: DragGesture.Value, screenHeight: CGFloat) {
+        let vertical = value.translation.height
+        let velocity = value.predictedEndTranslation.height - vertical
+        let threshold: CGFloat = 65
+        let hasPrev = coordinator.hasPreviousEpisode
+        let hasNext = coordinator.hasNextEpisode
+
+        if (vertical < -threshold || velocity < -180) && hasNext {
+            withAnimation(ReelTheme.butterSpring) {
+                dragOffsetY = -screenHeight
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                coordinator.advanceToNextEpisode()
+                dragOffsetY = 0
+                scheduleAutoHide()
+            }
+        } else if (vertical > threshold || velocity > 180) && hasPrev {
+            withAnimation(ReelTheme.butterSpring) {
+                dragOffsetY = screenHeight
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+                coordinator.returnToPreviousEpisode()
+                dragOffsetY = 0
+                scheduleAutoHide()
+            }
+        } else {
+            withAnimation(ReelTheme.butterSpring) {
+                dragOffsetY = 0
+            }
         }
     }
 
     private func scheduleAutoHide() {
         autoHideTask?.cancel()
+        guard coordinator.isPlaying else { return }
         autoHideTask = Task {
-            try? await Task.sleep(nanoseconds: 3_500_000_000)
-            guard !Task.isCancelled else { return }
-            withAnimation(ReelTheme.butterSpring) { isHUDVisible = false }
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            guard !Task.isCancelled, coordinator.isPlaying else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isHUDVisible = false
+                AppNavigationCoordinator.shared.isPlayerHUDVisible = false
+            }
         }
     }
 
@@ -251,6 +344,7 @@ public struct PlayerFeedView: View {
         EpisodeDrawerSheet(
             episodes: coordinator.currentEpisodes,
             currentEpisodeNumber: coordinator.currentEpisode?.episodeNumber ?? 1,
+            dramaTitle: coordinator.currentDramaTitle,
             onSelectEpisode: { ep in
                 showingEpisodeDrawer = false
                 let targetIdx = coordinator.currentEpisodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
@@ -260,6 +354,10 @@ public struct PlayerFeedView: View {
                     coverURL: coordinator.currentDramaCoverURL,
                     startingAt: targetIdx
                 )
+                withAnimation(ReelTheme.butterSpring) {
+                    isHUDVisible = true
+                    AppNavigationCoordinator.shared.isPlayerHUDVisible = true
+                }
                 scheduleAutoHide()
             }
         )

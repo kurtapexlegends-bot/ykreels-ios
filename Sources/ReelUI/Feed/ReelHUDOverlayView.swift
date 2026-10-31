@@ -51,9 +51,26 @@ public struct ReelHUDOverlayView: View {
                     .shadow(color: Color.black.opacity(0.85), radius: 4, y: 1)
 
                 if let current = coordinator.currentEpisode {
-                    Text("Ep \(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
-                        .font(.caption2.bold())
-                        .foregroundColor(ReelTheme.sakuraPink)
+                    Button(action: {
+                        onUserInteraction()
+                        onShowEpisodes()
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("Ep \(current.episodeNumber) / \(max(1, coordinator.currentEpisodes.count))")
+                                .font(.caption2.bold())
+                                .foregroundColor(ReelTheme.sakuraPink)
+
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundColor(ReelTheme.sakuraPink)
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(ReelTheme.sakuraPink.opacity(0.16))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().strokeBorder(ReelTheme.sakuraPink.opacity(0.3), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
