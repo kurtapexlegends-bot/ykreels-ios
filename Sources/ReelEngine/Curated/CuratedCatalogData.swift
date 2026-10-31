@@ -278,10 +278,32 @@ public enum CuratedCatalogData {
     ]
 
     public static let allDramas: [Drama] = [
-        taming_my_bulliesDrama,\n        contract_marriage_tycoonDrama,\n        janitor_rise_of_primeDrama,\n        if_wishes_could_killDrama,\n        second_first_loveDrama,\n        rent_a_cop_billionaireDrama,\n        dare_me_campus_secretsDrama,\n        the_dons_darlingDrama,\n        no_more_secretaryDrama,\n        reborn_rookieDrama,\n        after_the_divorceDrama,\n        the_cleaner_billion_secretDrama
+        taming_my_bulliesDrama,
+        contract_marriage_tycoonDrama,
+        janitor_rise_of_primeDrama,
+        if_wishes_could_killDrama,
+        second_first_loveDrama,
+        rent_a_cop_billionaireDrama,
+        dare_me_campus_secretsDrama,
+        the_dons_darlingDrama,
+        no_more_secretaryDrama,
+        reborn_rookieDrama,
+        after_the_divorceDrama,
+        the_cleaner_billion_secretDrama
     ]
 
     public static let allCatalogItems: [DramaCatalogItem] = [
-        DramaCatalogItem(drama: taming_my_bulliesDrama, episodes: taming_my_bulliesEpisodes),\n        DramaCatalogItem(drama: contract_marriage_tycoonDrama, episodes: contract_marriage_tycoonEpisodes),\n        DramaCatalogItem(drama: janitor_rise_of_primeDrama, episodes: janitor_rise_of_primeEpisodes),\n        DramaCatalogItem(drama: if_wishes_could_killDrama, episodes: if_wishes_could_killEpisodes),\n        DramaCatalogItem(drama: second_first_loveDrama, episodes: second_first_loveEpisodes),\n        DramaCatalogItem(drama: rent_a_cop_billionaireDrama, episodes: rent_a_cop_billionaireEpisodes),\n        DramaCatalogItem(drama: dare_me_campus_secretsDrama, episodes: dare_me_campus_secretsEpisodes),\n        DramaCatalogItem(drama: the_dons_darlingDrama, episodes: the_dons_darlingEpisodes),\n        DramaCatalogItem(drama: no_more_secretaryDrama, episodes: no_more_secretaryEpisodes),\n        DramaCatalogItem(drama: reborn_rookieDrama, episodes: reborn_rookieEpisodes),\n        DramaCatalogItem(drama: after_the_divorceDrama, episodes: after_the_divorceEpisodes),\n        DramaCatalogItem(drama: the_cleaner_billion_secretDrama, episodes: the_cleaner_billion_secretEpisodes)
+        DramaCatalogItem(drama: taming_my_bulliesDrama, episodes: taming_my_bulliesEpisodes),
+        DramaCatalogItem(drama: contract_marriage_tycoonDrama, episodes: contract_marriage_tycoonEpisodes),
+        DramaCatalogItem(drama: janitor_rise_of_primeDrama, episodes: janitor_rise_of_primeEpisodes),
+        DramaCatalogItem(drama: if_wishes_could_killDrama, episodes: if_wishes_could_killEpisodes),
+        DramaCatalogItem(drama: second_first_loveDrama, episodes: second_first_loveEpisodes),
+        DramaCatalogItem(drama: rent_a_cop_billionaireDrama, episodes: rent_a_cop_billionaireEpisodes),
+        DramaCatalogItem(drama: dare_me_campus_secretsDrama, episodes: dare_me_campus_secretsEpisodes),
+        DramaCatalogItem(drama: the_dons_darlingDrama, episodes: the_dons_darlingEpisodes),
+        DramaCatalogItem(drama: no_more_secretaryDrama, episodes: no_more_secretaryEpisodes),
+        DramaCatalogItem(drama: reborn_rookieDrama, episodes: reborn_rookieEpisodes),
+        DramaCatalogItem(drama: after_the_divorceDrama, episodes: after_the_divorceEpisodes),
+        DramaCatalogItem(drama: the_cleaner_billion_secretDrama, episodes: the_cleaner_billion_secretEpisodes)
     ]
 }
