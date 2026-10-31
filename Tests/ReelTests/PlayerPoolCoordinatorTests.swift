@@ -51,12 +51,13 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.currentEpisode?.episodeNumber, 1)
 
         // Advance to last episode
-        coordinator.loadEpisodes(sampleEpisodes, startingAt: 24)
-        XCTAssertEqual(coordinator.currentEpisode?.episodeNumber, 25)
+        let lastIndex = sampleEpisodes.count - 1
+        coordinator.loadEpisodes(sampleEpisodes, startingAt: lastIndex)
+        XCTAssertEqual(coordinator.currentEpisode?.episodeNumber, sampleEpisodes.count)
 
         // Cannot advance past last episode
         coordinator.advanceToNextEpisode()
-        XCTAssertEqual(coordinator.currentEpisode?.episodeNumber, 25)
+        XCTAssertEqual(coordinator.currentEpisode?.episodeNumber, sampleEpisodes.count)
     }
 
     func testPlaybackRateAndPause() {
