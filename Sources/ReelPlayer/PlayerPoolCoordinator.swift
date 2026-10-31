@@ -166,7 +166,8 @@ public final class PlayerPoolCoordinator: ObservableObject {
             if Date().timeIntervalSince(self.lastProgressReport) >= 3.0 { self.reportProgress() }
         }
         if let item = player.currentItem {
-            statusObservation = item.observe(\.status, options: [.new]) { [weak self] it, _ in
+            if item.status == .readyToPlay { isBuffering = false; hasRenderedFirstFrame = true }
+            statusObservation = item.observe(\.status, options: [.initial, .new]) { [weak self] it, _ in
                 Task { @MainActor [weak self] in
                     if it.status == .readyToPlay { self?.isBuffering = false; self?.hasRenderedFirstFrame = true }
                 }

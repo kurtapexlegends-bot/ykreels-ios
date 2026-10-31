@@ -147,5 +147,24 @@ final class PlayerPoolCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.hasPreviousEpisode)
         XCTAssertEqual(coordinator.previousEpisode?.episodeNumber, 1)
         XCTAssertEqual(coordinator.currentEpisodeIndex, 1)
+
+        coordinator.returnToPreviousEpisode()
+        XCTAssertFalse(coordinator.hasPreviousEpisode)
+        XCTAssertEqual(coordinator.currentEpisodeIndex, 0)
+    }
+
+    func testRapidAdvanceBoundaries() {
+        coordinator.loadEpisodes(sampleEpisodes, startingAt: 0)
+        for _ in 0..<sampleEpisodes.count + 5 {
+            coordinator.advanceToNextEpisode()
+        }
+        XCTAssertEqual(coordinator.currentEpisodeIndex, sampleEpisodes.count - 1)
+        XCTAssertFalse(coordinator.hasNextEpisode)
+
+        for _ in 0..<sampleEpisodes.count + 5 {
+            coordinator.returnToPreviousEpisode()
+        }
+        XCTAssertEqual(coordinator.currentEpisodeIndex, 0)
+        XCTAssertFalse(coordinator.hasPreviousEpisode)
     }
 }

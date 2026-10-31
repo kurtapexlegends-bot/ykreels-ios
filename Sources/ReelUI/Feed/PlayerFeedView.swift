@@ -19,7 +19,10 @@ public struct PlayerFeedView: View {
     @State private var showPlayPausePulse: Bool = false
     @State private var isHUDVisible: Bool = true
     @State private var autoHideTask: Task<Void, Never>?
+    @State private var singleTapTask: Task<Void, Never>?
+    @State private var lastTapTime: Date = .distantPast
     @State private var dragOffsetY: CGFloat = 0.0
+    @State private var isPaging: Bool = false
 
     public init() {}
 
@@ -60,6 +63,14 @@ public struct PlayerFeedView: View {
                         .offset(y: size.height + dragOffsetY)
                 }
 
+                // MARK: - Video Surface Tap Layer (Behind HUD Controls)
+                Color.clear
+                    .frame(width: size.width, height: size.height)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        handleVideoSurfaceTap()
+                    }
+
                 // MARK: - Glassmorphic HUD Overlays
                 if isHUDVisible {
                     ReelHUDOverlayView(
@@ -97,27 +108,17 @@ public struct PlayerFeedView: View {
                 }
             }
             .frame(width: size.width, height: size.height)
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) {
-                triggerDoubleTapLike()
-            }
-            .onTapGesture(count: 1) {
-                handleSingleTap()
-            }
             .gesture(
                 DragGesture(minimumDistance: 15)
-                    .onChanged { value in
-                        handleDragChanged(value)
-                    }
-                    .onEnded { value in
-                        handleDragEnded(value, screenHeight: size.height)
-                    }
+                    .onChanged { handleDragChanged($0) }
+                    .onEnded { handleDragEnded($0, screenHeight: size.height) }
             )
         }
         .ignoresSafeArea()
         .onAppear {
             isHUDVisible = true
             AppNavigationCoordinator.shared.isPlayerHUDVisible = true
+            attachProgressObserver()
             if coordinator.currentEpisodes.isEmpty {
                 loadInitialEpisodes()
             } else {
@@ -128,6 +129,7 @@ public struct PlayerFeedView: View {
         .onDisappear {
             coordinator.pause()
             autoHideTask?.cancel()
+            singleTapTask?.cancel()
         }
         .sheet(isPresented: $showingEpisodeDrawer) { episodeDrawerSheet }
     }
@@ -220,6 +222,24 @@ public struct PlayerFeedView: View {
     }
 
     // MARK: - Gestures & Interactions
+    private func handleVideoSurfaceTap() {
+        let now = Date()
+        if now.timeIntervalSince(lastTapTime) < 0.28 {
+            singleTapTask?.cancel()
+            singleTapTask = nil
+            lastTapTime = .distantPast
+            triggerDoubleTapLike()
+        } else {
+            lastTapTime = now
+            singleTapTask?.cancel()
+            singleTapTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 280_000_000)
+                guard !Task.isCancelled else { return }
+                handleSingleTap()
+            }
+        }
+    }
+
     private func handleSingleTap() {
         if !isHUDVisible {
             withAnimation(ReelTheme.butterSpring) {
@@ -247,6 +267,7 @@ public struct PlayerFeedView: View {
     }
 
     private func handleDragChanged(_ value: DragGesture.Value) {
+        guard !isPaging else { return }
         let vertical = value.translation.height
         let horizontal = value.translation.width
         guard abs(vertical) > abs(horizontal) else { return }
@@ -262,6 +283,7 @@ public struct PlayerFeedView: View {
     }
 
     private func handleDragEnded(_ value: DragGesture.Value, screenHeight: CGFloat) {
+        guard !isPaging else { return }
         let vertical = value.translation.height
         let velocity = value.predictedEndTranslation.height - vertical
         let threshold: CGFloat = 65
@@ -269,21 +291,25 @@ public struct PlayerFeedView: View {
         let hasNext = coordinator.hasNextEpisode
 
         if (vertical < -threshold || velocity < -180) && hasNext {
+            isPaging = true
             withAnimation(ReelTheme.butterSpring) {
                 dragOffsetY = -screenHeight
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                 coordinator.advanceToNextEpisode()
                 dragOffsetY = 0
+                isPaging = false
                 scheduleAutoHide()
             }
         } else if (vertical > threshold || velocity > 180) && hasPrev {
+            isPaging = true
             withAnimation(ReelTheme.butterSpring) {
                 dragOffsetY = screenHeight
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
                 coordinator.returnToPreviousEpisode()
                 dragOffsetY = 0
+                isPaging = false
                 scheduleAutoHide()
             }
         } else {
@@ -315,27 +341,27 @@ public struct PlayerFeedView: View {
         }
     }
 
+    private func attachProgressObserver() {
+        coordinator.onProgressUpdate = { episode, playhead, duration in
+            Task { @MainActor in
+                let progress = PlaybackProgress(
+                    dramaId: episode.dramaId, lastEpisodeId: episode.id,
+                    lastEpisodeNumber: episode.episodeNumber, playheadSeconds: playhead,
+                    durationSeconds: duration, isCompleted: duration > 0 && playhead >= (duration - 1.0)
+                )
+                try? DramaRepository.shared.upsertPlaybackProgress(progress)
+            }
+        }
+    }
+
     private func loadInitialEpisodes() {
         Task { @MainActor in
-            coordinator.onProgressUpdate = { episode, playhead, duration in
-                Task { @MainActor in
-                    let progress = PlaybackProgress(
-                        dramaId: episode.dramaId,
-                        lastEpisodeId: episode.id,
-                        lastEpisodeNumber: episode.episodeNumber,
-                        playheadSeconds: playhead,
-                        durationSeconds: duration,
-                        isCompleted: duration > 0 && playhead >= (duration - 1.0)
-                    )
-                    try? DramaRepository.shared.upsertPlaybackProgress(progress)
-                }
-            }
+            attachProgressObserver()
             guard coordinator.currentEpisodes.isEmpty else { return }
             let initialDrama = (try? await CuratedDramaCatalog.shared.getFeaturedDrama()) ?? WrongMatchRightCrushData.drama
             let eps = (try? await CuratedDramaCatalog.shared.getEpisodes(dramaId: initialDrama.id)) ?? WrongMatchRightCrushData.episodes
             coordinator.loadEpisodes(eps, dramaTitle: initialDrama.title, coverURL: initialDrama.coverURL, startingAt: 0)
-            scheduleAutoHide()
-            Task(priority: .utility) { await CuratedDramaCatalog.shared.syncFromRemote() }
+            scheduleAutoHide(); Task(priority: .utility) { await CuratedDramaCatalog.shared.syncFromRemote() }
         }
     }
 
@@ -348,16 +374,8 @@ public struct PlayerFeedView: View {
             onSelectEpisode: { ep in
                 showingEpisodeDrawer = false
                 let targetIdx = coordinator.currentEpisodes.firstIndex(where: { $0.id == ep.id }) ?? max(0, ep.episodeNumber - 1)
-                coordinator.loadEpisodes(
-                    coordinator.currentEpisodes,
-                    dramaTitle: coordinator.currentDramaTitle,
-                    coverURL: coordinator.currentDramaCoverURL,
-                    startingAt: targetIdx
-                )
-                withAnimation(ReelTheme.butterSpring) {
-                    isHUDVisible = true
-                    AppNavigationCoordinator.shared.isPlayerHUDVisible = true
-                }
+                coordinator.loadEpisodes(coordinator.currentEpisodes, dramaTitle: coordinator.currentDramaTitle, coverURL: coordinator.currentDramaCoverURL, startingAt: targetIdx)
+                withAnimation(ReelTheme.butterSpring) { isHUDVisible = true; AppNavigationCoordinator.shared.isPlayerHUDVisible = true }
                 scheduleAutoHide()
             }
         )

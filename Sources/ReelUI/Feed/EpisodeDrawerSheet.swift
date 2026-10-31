@@ -10,6 +10,7 @@ public struct EpisodeDrawerSheet: View {
     public let dramaTitle: String
     public let onSelectEpisode: (Episode) -> Void
 
+    @Environment(\.dismiss) private var dismiss
     private let columns = [GridItem(.adaptive(minimum: 58, maximum: 74), spacing: 10)]
 
     public init(
@@ -80,6 +81,16 @@ public struct EpisodeDrawerSheet: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(ReelTheme.textSecondary)
+                            .font(.system(size: 20))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
         }
     }
 
